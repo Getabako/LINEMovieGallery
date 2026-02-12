@@ -23,7 +23,7 @@ const VIDEOS = [
 ];
 
 // --- LIFF設定 ---
-const LIFF_ID = ''; // デプロイ時にLIFF IDを設定
+const LIFF_ID = '2009109071-mxy5adpB';
 
 // --- グローバル変数 ---
 let swiper = null;
