@@ -88,6 +88,7 @@ let overlayTimer = null;
 let ytApiReady = false;
 let appInitialized = false;
 let searchDebounceTimer = null;
+let liffAvailable = false;
 
 // --- YouTube IFrame API Ready ---
 window.onYouTubeIframeAPIReady = function () {
@@ -97,20 +98,76 @@ window.onYouTubeIframeAPIReady = function () {
   }
 };
 
+// --- YouTube API を動的に読み込み（タイムアウト付き） ---
+function loadYouTubeAPI() {
+  return new Promise((resolve) => {
+    // 既に読み込まれている場合
+    if (window.YT && window.YT.Player) {
+      ytApiReady = true;
+      resolve();
+      return;
+    }
+
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+
+    const timeout = setTimeout(() => {
+      console.warn('YouTube API load timeout');
+      resolve(); // タイムアウトしてもアプリは続行
+    }, 8000);
+
+    const origCallback = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function () {
+      clearTimeout(timeout);
+      ytApiReady = true;
+      if (origCallback) origCallback();
+      resolve();
+    };
+
+    tag.onerror = () => {
+      clearTimeout(timeout);
+      console.warn('YouTube API load failed');
+      resolve(); // 失敗してもアプリは続行
+    };
+
+    document.head.appendChild(tag);
+  });
+}
+
+// --- LIFF を安全に初期化 ---
+async function initLIFF() {
+  if (!LIFF_ID) return;
+  if (window.__liffLoadFailed || typeof liff === 'undefined') {
+    console.warn('LIFF SDK not available');
+    return;
+  }
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    liffAvailable = true;
+  } catch (e) {
+    console.warn('LIFF init failed:', e);
+  }
+}
+
+// --- LIFF 安全ヘルパー ---
+function isInLineClient() {
+  try {
+    return liffAvailable && liff.isInClient();
+  } catch (e) {
+    return false;
+  }
+}
+
 // --- アプリ初期化 ---
 document.addEventListener('DOMContentLoaded', function () {
   initApp();
 });
 
 async function initApp() {
-  if (LIFF_ID) {
-    try {
-      await liff.init({ liffId: LIFF_ID });
-    } catch (e) {
-      console.warn('LIFF init failed:', e);
-    }
-  }
+  // LIFF初期化（失敗してもアプリは続行）
+  await initLIFF();
 
+  // UIを構築
   buildFilterChips();
   setupSearch();
   applyFilter();
@@ -118,6 +175,9 @@ async function initApp() {
   setupLandscapeControls();
 
   appInitialized = true;
+
+  // YouTube APIを動的読み込み
+  await loadYouTubeAPI();
 
   if (ytApiReady && filteredVideos.length > 0) {
     createPlayerForSlide(0);
@@ -373,9 +433,13 @@ function goToVideo(index) {
 }
 
 function createPlayerForSlide(index) {
-  if (!ytApiReady || index >= filteredVideos.length) return;
+  if (!ytApiReady || !window.YT || !window.YT.Player) return;
+  if (index >= filteredVideos.length) return;
+
   const video = filteredVideos[index];
   const thumbnail = document.getElementById(`thumbnail-${index}`);
+  const wrapper = document.getElementById(`playerWrapper-${index}`);
+  if (!wrapper) return;
 
   if (players[index]) {
     try { players[index].playVideo(); } catch (e) { rebuildPlayer(index); }
@@ -384,32 +448,36 @@ function createPlayerForSlide(index) {
 
   if (thumbnail) thumbnail.style.display = 'none';
 
-  const wrapper = document.getElementById(`playerWrapper-${index}`);
   const playerDiv = document.createElement('div');
   playerDiv.id = `ytplayer-${index}`;
   wrapper.appendChild(playerDiv);
 
-  players[index] = new YT.Player(`ytplayer-${index}`, {
-    videoId: video.id,
-    playerVars: {
-      autoplay: 1,
-      playsinline: 1,
-      rel: 0,
-      modestbranding: 1,
-      controls: 1,
-      fs: 0,
-    },
-    events: {
-      onReady: (event) => event.target.playVideo(),
-      onStateChange: (event) => {
-        if (event.data === YT.PlayerState.ENDED) {
-          if (currentSlideIndex < filteredVideos.length - 1) {
-            goToVideo(currentSlideIndex + 1);
-          }
-        }
+  try {
+    players[index] = new YT.Player(`ytplayer-${index}`, {
+      videoId: video.id,
+      playerVars: {
+        autoplay: 1,
+        playsinline: 1,
+        rel: 0,
+        modestbranding: 1,
+        controls: 1,
+        fs: 0,
       },
-    },
-  });
+      events: {
+        onReady: (event) => { try { event.target.playVideo(); } catch (e) {} },
+        onError: (event) => { console.warn('YT Player error:', event.data); },
+        onStateChange: (event) => {
+          if (event.data === YT.PlayerState.ENDED) {
+            if (currentSlideIndex < filteredVideos.length - 1) {
+              goToVideo(currentSlideIndex + 1);
+            }
+          }
+        },
+      },
+    });
+  } catch (e) {
+    console.warn('Failed to create YT player:', e);
+  }
 }
 
 function rebuildPlayer(index) {
@@ -531,7 +599,7 @@ function setupLandscapeControls() {
 
   document.getElementById('landscapeBackBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (LIFF_ID && liff.isInClient()) liff.closeWindow();
+    if (isInLineClient()) { try { liff.closeWindow(); } catch (e) {} }
   });
 }
 
