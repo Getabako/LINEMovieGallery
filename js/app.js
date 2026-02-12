@@ -80,13 +80,88 @@ function buildSwiperSlides() {
   wrapper.innerHTML = VIDEOS.map((video, index) => `
     <div class="swiper-slide" data-index="${index}">
       <div class="video-frame-wrapper" id="playerWrapper-${index}">
-        <div class="video-thumbnail-slide" id="thumbnail-${index}" onclick="onThumbnailClick(${index})">
+        <div class="video-thumbnail-slide" id="thumbnail-${index}">
           <img src="https://img.youtube.com/vi/${video.id}/hqdefault.jpg" alt="${video.title}">
           <div class="thumbnail-play-icon"></div>
+        </div>
+        <div class="touch-overlay" data-index="${index}">
+          <div class="tap-to-play" id="tapIcon-${index}"></div>
         </div>
       </div>
     </div>
   `).join('');
+
+  // タッチオーバーレイにイベント設定
+  document.querySelectorAll('.touch-overlay').forEach(overlay => {
+    setupTouchOverlay(overlay);
+  });
+}
+
+// --- タッチオーバーレイのイベント設定 ---
+function setupTouchOverlay(overlay) {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  const TAP_THRESHOLD = 15; // px以内ならタップ判定
+  const TAP_TIME = 300;     // ms以内ならタップ判定
+
+  overlay.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+  }, { passive: true });
+
+  overlay.addEventListener('touchend', (e) => {
+    const touch = e.changedTouches[0];
+    const dx = Math.abs(touch.clientX - touchStartX);
+    const dy = Math.abs(touch.clientY - touchStartY);
+    const dt = Date.now() - touchStartTime;
+
+    // スワイプではなくタップの場合 → 再生/一時停止
+    if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && dt < TAP_TIME) {
+      const index = parseInt(overlay.dataset.index);
+      togglePlayPause(index);
+    }
+    // スワイプの場合はSwiperが処理するので何もしない
+  }, { passive: true });
+
+  // クリック（PC用）
+  overlay.addEventListener('click', (e) => {
+    const index = parseInt(overlay.dataset.index);
+    togglePlayPause(index);
+  });
+}
+
+// --- 再生/一時停止トグル ---
+function togglePlayPause(index) {
+  const player = players[index];
+  if (!player) {
+    // プレーヤーがまだない場合は作成
+    createPlayerForSlide(index);
+    return;
+  }
+
+  try {
+    const state = player.getPlayerState();
+    const tapIcon = document.getElementById(`tapIcon-${index}`);
+
+    if (state === YT.PlayerState.PLAYING) {
+      player.pauseVideo();
+      if (tapIcon) {
+        tapIcon.classList.add('paused', 'show');
+        setTimeout(() => tapIcon.classList.remove('show'), 800);
+      }
+    } else {
+      player.playVideo();
+      if (tapIcon) {
+        tapIcon.classList.remove('paused');
+        tapIcon.classList.add('show');
+        setTimeout(() => tapIcon.classList.remove('show'), 800);
+      }
+    }
+  } catch (e) {
+    createPlayerForSlide(index);
+  }
 }
 
 // --- 動画一覧グリッド構築 ---
@@ -114,7 +189,8 @@ function initSwiper() {
     resistance: true,
     resistanceRatio: 0.3,
     speed: 300,
-    threshold: 20,
+    threshold: 10,
+    touchEventsTarget: 'container',
     on: {
       slideChange: function () {
         const newIndex = this.activeIndex;
@@ -139,11 +215,6 @@ function onSlideChange(newIndex) {
 
   // 新しいスライドのプレーヤーを作成/再生
   createPlayerForSlide(newIndex);
-}
-
-// --- サムネイルクリック ---
-function onThumbnailClick(index) {
-  createPlayerForSlide(index);
 }
 
 // --- 動画一覧から選択 ---
