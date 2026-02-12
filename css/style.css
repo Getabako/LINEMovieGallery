@@ -16,7 +16,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --header-height: 52px;
+  --header-height: 140px;
 }
 
 * {
@@ -52,7 +52,7 @@ html, body {
 }
 
 .header-inner {
-  height: var(--header-height);
+  height: 44px;
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -82,6 +82,114 @@ html, body {
 }
 
 /* ============================================
+   検索バー
+   ============================================ */
+
+.search-bar {
+  padding: 6px 16px 8px;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 40px;
+  transition: border-color 0.2s;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--primary);
+}
+
+.search-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 0 10px;
+  height: 100%;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-clear {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.2s;
+}
+
+.search-clear:active {
+  color: var(--text-primary);
+}
+
+/* ============================================
+   カテゴリフィルター
+   ============================================ */
+
+.filter-bar {
+  padding: 0 0 8px;
+}
+
+.filter-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid #333;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-chip:active {
+  transform: scale(0.95);
+}
+
+.filter-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* ============================================
    メインコンテンツ
    ============================================ */
 
@@ -105,6 +213,10 @@ html, body {
   position: relative;
   width: 100%;
   background: #000;
+}
+
+.player-section.hidden {
+  display: none;
 }
 
 .player-swiper {
@@ -232,6 +344,10 @@ html, body {
   background: var(--bg-dark);
 }
 
+.swipe-indicator.hidden {
+  display: none;
+}
+
 .swipe-dots {
   display: flex;
   justify-content: center;
@@ -261,6 +377,22 @@ html, body {
   background: var(--bg-dark);
 }
 
+.video-info.hidden {
+  display: none;
+}
+
+.video-info-category {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+  background: rgba(200, 16, 46, 0.15);
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
 .video-title {
   font-size: 16px;
   font-weight: 700;
@@ -284,13 +416,24 @@ html, body {
   background: var(--bg-dark);
 }
 
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 12px;
+  border-top: 1px solid #222;
+}
+
 .list-heading {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--text-muted);
-  padding: 16px 0 12px;
-  border-top: 1px solid #222;
+}
+
+.list-count {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .video-grid {
@@ -348,6 +491,18 @@ html, body {
   letter-spacing: 0.5px;
 }
 
+.card-category-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ccc;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
 .card-info {
   flex: 1;
   display: flex;
@@ -371,6 +526,42 @@ html, body {
 .card-meta {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* ============================================
+   検索結果なし
+   ============================================ */
+
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 16px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.no-results p {
+  font-size: 14px;
+}
+
+.reset-filter-btn {
+  background: var(--bg-card);
+  border: 1px solid #333;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  padding: 10px 24px;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.reset-filter-btn:active {
+  background: #2a2a2a;
 }
 
 /* ============================================
@@ -544,6 +735,9 @@ html, body {
 .video-card:nth-child(3) { animation-delay: 0.15s; }
 .video-card:nth-child(4) { animation-delay: 0.2s; }
 .video-card:nth-child(5) { animation-delay: 0.25s; }
+.video-card:nth-child(6) { animation-delay: 0.3s; }
+.video-card:nth-child(7) { animation-delay: 0.35s; }
+.video-card:nth-child(8) { animation-delay: 0.4s; }
 
 /* ============================================
    スクロールバー

@@ -3,22 +3,73 @@
    LINE LIFF App - Main Application
    ============================================ */
 
+// --- カテゴリ定義 ---
+const CATEGORIES = [
+  { key: 'all',       label: 'すべて' },
+  { key: 'highlight', label: '試合ハイライト' },
+  { key: 'interview', label: '選手インタビュー' },
+  { key: 'message',   label: '選手メッセージ' },
+  { key: 'cheer',     label: 'チア・イベント' },
+  { key: 'behind',    label: '舞台裏' },
+];
+
 // --- 動画データ ---
-const VIDEOS = [
+const ALL_VIDEOS = [
   {
     id: '4DzlWiyNPJU',
-    title: '秋田ノーザンハピネッツ ハイライト',
-    description: '試合のハイライト映像をお届けします。',
+    title: '秋田ノーザンハピネッツ 試合ハイライト vs アルバルク東京',
+    description: 'B.LEAGUE 2024-25シーズン 注目の一戦をハイライトでお届け。',
+    category: 'highlight',
+    tags: ['試合', 'ハイライト', 'アルバルク', 'Bリーグ'],
   },
   {
     id: 'hjX5rhceKpA',
-    title: '秋田ノーザンハピネッツ ゲームレポート',
-    description: '注目のプレーをピックアップ。',
+    title: '【選手インタビュー】シーズンを振り返って',
+    description: '主力選手がシーズンの手応えと課題を語る。',
+    category: 'interview',
+    tags: ['選手', 'インタビュー', 'シーズン'],
   },
   {
     id: 'D2nR0NFsgbo',
-    title: '秋田ノーザンハピネッツ スペシャルムービー',
-    description: 'チームの魅力をお届けするスペシャルコンテンツ。',
+    title: '選手からファンへのメッセージ 2025',
+    description: 'いつも応援ありがとう！選手たちからファンの皆様へ感謝のメッセージ。',
+    category: 'message',
+    tags: ['選手', 'メッセージ', 'ファン', '感謝'],
+  },
+  {
+    id: '4DzlWiyNPJU',
+    title: '秋田ノーザンハピネッツ 試合ハイライト vs 千葉ジェッツ',
+    description: 'ホームゲームの熱い戦いをダイジェストで。',
+    category: 'highlight',
+    tags: ['試合', 'ハイライト', '千葉ジェッツ', 'ホーム'],
+  },
+  {
+    id: 'hjX5rhceKpA',
+    title: 'ハピネッツチアリーダーズ パフォーマンス集',
+    description: 'ハーフタイムを盛り上げるチアリーダーズの最高のパフォーマンス。',
+    category: 'cheer',
+    tags: ['チア', 'チアリーダーズ', 'パフォーマンス', 'ハーフタイム'],
+  },
+  {
+    id: 'D2nR0NFsgbo',
+    title: '【密着】試合当日の舞台裏に潜入！',
+    description: 'CNAアリーナの裏側をお見せします。選手の準備から試合直前の緊張感まで。',
+    category: 'behind',
+    tags: ['舞台裏', '密着', 'アリーナ', '裏側'],
+  },
+  {
+    id: '4DzlWiyNPJU',
+    title: 'キャプテンからの開幕メッセージ',
+    description: '新シーズン開幕に向けたキャプテンの意気込み。',
+    category: 'message',
+    tags: ['キャプテン', 'メッセージ', '開幕', 'シーズン'],
+  },
+  {
+    id: 'hjX5rhceKpA',
+    title: 'ファン感謝祭 2025 ダイジェスト',
+    description: 'ファンとの交流イベントの模様をお届け。',
+    category: 'cheer',
+    tags: ['ファン', '感謝祭', 'イベント', '交流'],
   },
 ];
 
@@ -28,17 +79,21 @@ const LIFF_ID = '2009109071-mxy5adpB';
 // --- グローバル変数 ---
 let swiper = null;
 let players = {};
-let currentIndex = 0;
+let currentSlideIndex = 0;
+let filteredVideos = [...ALL_VIDEOS];
+let activeCategory = 'all';
+let searchQuery = '';
 let isLandscape = false;
 let overlayTimer = null;
 let ytApiReady = false;
 let appInitialized = false;
+let searchDebounceTimer = null;
 
 // --- YouTube IFrame API Ready ---
 window.onYouTubeIframeAPIReady = function () {
   ytApiReady = true;
-  if (appInitialized) {
-    createPlayerForSlide(currentIndex);
+  if (appInitialized && filteredVideos.length > 0) {
+    createPlayerForSlide(0);
   }
 };
 
@@ -48,7 +103,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 async function initApp() {
-  // LIFF初期化（IDが設定されている場合）
   if (LIFF_ID) {
     try {
       await liff.init({ liffId: LIFF_ID });
@@ -57,27 +111,134 @@ async function initApp() {
     }
   }
 
-  // UIを構築
-  buildSwiperSlides();
-  buildVideoGrid();
-  initSwiper();
-  updateVideoInfo(0);
-  updateDots(0);
+  buildFilterChips();
+  setupSearch();
+  applyFilter();
   setupOrientationHandler();
   setupLandscapeControls();
 
   appInitialized = true;
 
-  // YouTube APIが既に読み込まれている場合
-  if (ytApiReady) {
+  if (ytApiReady && filteredVideos.length > 0) {
     createPlayerForSlide(0);
   }
 }
 
-// --- スワイパースライド構築 ---
+// ============================================
+// フィルター & 検索
+// ============================================
+
+function buildFilterChips() {
+  const scroll = document.querySelector('.filter-scroll');
+  scroll.innerHTML = CATEGORIES.map(cat =>
+    `<button class="filter-chip ${cat.key === 'all' ? 'active' : ''}" data-category="${cat.key}">${cat.label}</button>`
+  ).join('');
+
+  scroll.addEventListener('click', (e) => {
+    const chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    const category = chip.dataset.category;
+    setActiveCategory(category);
+  });
+}
+
+function setActiveCategory(category) {
+  activeCategory = category;
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.category === category);
+  });
+  applyFilter();
+}
+
+function setupSearch() {
+  const input = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('searchClear');
+  const resetBtn = document.getElementById('resetFilterBtn');
+
+  input.addEventListener('input', () => {
+    const val = input.value.trim();
+    clearBtn.style.display = val ? 'flex' : 'none';
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      searchQuery = val;
+      applyFilter();
+    }, 250);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.style.display = 'none';
+    searchQuery = '';
+    applyFilter();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.style.display = 'none';
+    searchQuery = '';
+    setActiveCategory('all');
+  });
+}
+
+function applyFilter() {
+  // すべてのプレーヤーを停止・破棄
+  destroyAllPlayers();
+
+  // フィルタリング
+  filteredVideos = ALL_VIDEOS.filter(video => {
+    const matchCategory = activeCategory === 'all' || video.category === activeCategory;
+    if (!matchCategory) return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      video.title.toLowerCase().includes(q) ||
+      video.description.toLowerCase().includes(q) ||
+      video.tags.some(tag => tag.toLowerCase().includes(q))
+    );
+  });
+
+  currentSlideIndex = 0;
+
+  // UI更新
+  const hasResults = filteredVideos.length > 0;
+  const playerSection = document.getElementById('playerSection');
+  const swipeIndicator = document.getElementById('swipeIndicator');
+  const videoInfo = document.getElementById('videoInfo');
+  const videoGrid = document.getElementById('videoGrid');
+  const noResults = document.getElementById('noResults');
+
+  playerSection.classList.toggle('hidden', !hasResults);
+  swipeIndicator.classList.toggle('hidden', !hasResults);
+  videoInfo.classList.toggle('hidden', !hasResults);
+  videoGrid.style.display = hasResults ? '' : 'none';
+  noResults.style.display = hasResults ? 'none' : 'flex';
+
+  // 見出し更新
+  const categoryLabel = CATEGORIES.find(c => c.key === activeCategory)?.label || 'すべて';
+  document.getElementById('listHeading').textContent =
+    activeCategory === 'all' ? 'ALL MOVIES' : categoryLabel;
+  document.getElementById('listCount').textContent = `${filteredVideos.length}本`;
+
+  if (hasResults) {
+    buildSwiperSlides();
+    buildVideoGrid();
+    initSwiper();
+    updateVideoInfo(0);
+    updateDots(0);
+
+    if (ytApiReady) {
+      createPlayerForSlide(0);
+    }
+  }
+}
+
+// ============================================
+// プレーヤー & スワイパー
+// ============================================
+
 function buildSwiperSlides() {
   const wrapper = document.getElementById('swiperWrapper');
-  wrapper.innerHTML = VIDEOS.map((video, index) => `
+  wrapper.innerHTML = filteredVideos.map((video, index) => `
     <div class="swiper-slide" data-index="${index}">
       <div class="video-frame-wrapper" id="playerWrapper-${index}">
         <div class="video-thumbnail-slide" id="thumbnail-${index}">
@@ -91,19 +252,17 @@ function buildSwiperSlides() {
     </div>
   `).join('');
 
-  // タッチオーバーレイにイベント設定
   document.querySelectorAll('.touch-overlay').forEach(overlay => {
     setupTouchOverlay(overlay);
   });
 }
 
-// --- タッチオーバーレイのイベント設定 ---
 function setupTouchOverlay(overlay) {
   let touchStartX = 0;
   let touchStartY = 0;
   let touchStartTime = 0;
-  const TAP_THRESHOLD = 15; // px以内ならタップ判定
-  const TAP_TIME = 300;     // ms以内ならタップ判定
+  const TAP_THRESHOLD = 15;
+  const TAP_TIME = 300;
 
   overlay.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
@@ -116,35 +275,27 @@ function setupTouchOverlay(overlay) {
     const dx = Math.abs(touch.clientX - touchStartX);
     const dy = Math.abs(touch.clientY - touchStartY);
     const dt = Date.now() - touchStartTime;
-
-    // スワイプではなくタップの場合 → 再生/一時停止
     if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && dt < TAP_TIME) {
       const index = parseInt(overlay.dataset.index);
       togglePlayPause(index);
     }
-    // スワイプの場合はSwiperが処理するので何もしない
   }, { passive: true });
 
-  // クリック（PC用）
-  overlay.addEventListener('click', (e) => {
+  overlay.addEventListener('click', () => {
     const index = parseInt(overlay.dataset.index);
     togglePlayPause(index);
   });
 }
 
-// --- 再生/一時停止トグル ---
 function togglePlayPause(index) {
   const player = players[index];
   if (!player) {
-    // プレーヤーがまだない場合は作成
     createPlayerForSlide(index);
     return;
   }
-
   try {
     const state = player.getPlayerState();
     const tapIcon = document.getElementById(`tapIcon-${index}`);
-
     if (state === YT.PlayerState.PLAYING) {
       player.pauseVideo();
       if (tapIcon) {
@@ -164,25 +315,31 @@ function togglePlayPause(index) {
   }
 }
 
-// --- 動画一覧グリッド構築 ---
 function buildVideoGrid() {
   const grid = document.getElementById('videoGrid');
-  grid.innerHTML = VIDEOS.map((video, index) => `
-    <div class="video-card ${index === 0 ? 'active' : ''}" data-index="${index}" onclick="goToVideo(${index})">
-      <div class="card-thumbnail">
-        <img src="https://img.youtube.com/vi/${video.id}/mqdefault.jpg" alt="${video.title}">
-        ${index === 0 ? '<span class="card-now-playing">再生中</span>' : ''}
+  grid.innerHTML = filteredVideos.map((video, index) => {
+    const catLabel = CATEGORIES.find(c => c.key === video.category)?.label || '';
+    return `
+      <div class="video-card ${index === 0 ? 'active' : ''}" data-index="${index}" onclick="goToVideo(${index})">
+        <div class="card-thumbnail">
+          <img src="https://img.youtube.com/vi/${video.id}/mqdefault.jpg" alt="${video.title}">
+          <span class="card-category-badge">${catLabel}</span>
+          ${index === 0 ? '<span class="card-now-playing">再生中</span>' : ''}
+        </div>
+        <div class="card-info">
+          <div class="card-title">${video.title}</div>
+          <div class="card-meta">秋田ノーザンハピネッツ</div>
+        </div>
       </div>
-      <div class="card-info">
-        <div class="card-title">${video.title}</div>
-        <div class="card-meta">秋田ノーザンハピネッツ</div>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
-// --- Swiper初期化 ---
 function initSwiper() {
+  if (swiper) {
+    swiper.destroy(true, true);
+    swiper = null;
+  }
   swiper = new Swiper('#playerSwiper', {
     slidesPerView: 1,
     spaceBetween: 0,
@@ -193,67 +350,45 @@ function initSwiper() {
     touchEventsTarget: 'container',
     on: {
       slideChange: function () {
-        const newIndex = this.activeIndex;
-        onSlideChange(newIndex);
+        onSlideChange(this.activeIndex);
       },
     },
   });
 }
 
-// --- スライド切り替え処理 ---
 function onSlideChange(newIndex) {
-  // 前の動画を停止
-  pausePlayer(currentIndex);
-
-  currentIndex = newIndex;
-
-  // UI更新
+  pausePlayer(currentSlideIndex);
+  currentSlideIndex = newIndex;
   updateVideoInfo(newIndex);
   updateDots(newIndex);
   updateVideoGrid(newIndex);
   updateLandscapeUI(newIndex);
-
-  // 新しいスライドのプレーヤーを作成/再生
   createPlayerForSlide(newIndex);
 }
 
-// --- 動画一覧から選択 ---
 function goToVideo(index) {
   if (swiper) {
     swiper.slideTo(index);
   }
 }
 
-// --- YouTube プレーヤー作成 ---
 function createPlayerForSlide(index) {
-  if (!ytApiReady) return;
-
-  const video = VIDEOS[index];
+  if (!ytApiReady || index >= filteredVideos.length) return;
+  const video = filteredVideos[index];
   const thumbnail = document.getElementById(`thumbnail-${index}`);
 
-  // 既にプレーヤーが存在する場合は再生
   if (players[index]) {
-    try {
-      players[index].playVideo();
-    } catch (e) {
-      // プレーヤーが破損している場合は再作成
-      rebuildPlayer(index);
-    }
+    try { players[index].playVideo(); } catch (e) { rebuildPlayer(index); }
     return;
   }
 
-  // サムネイルを隠す
-  if (thumbnail) {
-    thumbnail.style.display = 'none';
-  }
+  if (thumbnail) thumbnail.style.display = 'none';
 
-  // iframeコンテナ作成
   const wrapper = document.getElementById(`playerWrapper-${index}`);
   const playerDiv = document.createElement('div');
   playerDiv.id = `ytplayer-${index}`;
   wrapper.appendChild(playerDiv);
 
-  // YouTube プレーヤー作成
   players[index] = new YT.Player(`ytplayer-${index}`, {
     videoId: video.id,
     playerVars: {
@@ -262,17 +397,14 @@ function createPlayerForSlide(index) {
       rel: 0,
       modestbranding: 1,
       controls: 1,
-      fs: 0, // フルスクリーンボタンを非表示（横画面で自動対応するため）
+      fs: 0,
     },
     events: {
-      onReady: function (event) {
-        event.target.playVideo();
-      },
-      onStateChange: function (event) {
-        // 動画終了時に次の動画へ
+      onReady: (event) => event.target.playVideo(),
+      onStateChange: (event) => {
         if (event.data === YT.PlayerState.ENDED) {
-          if (currentIndex < VIDEOS.length - 1) {
-            goToVideo(currentIndex + 1);
+          if (currentSlideIndex < filteredVideos.length - 1) {
+            goToVideo(currentSlideIndex + 1);
           }
         }
       },
@@ -280,44 +412,49 @@ function createPlayerForSlide(index) {
   });
 }
 
-// --- プレーヤー再構築 ---
 function rebuildPlayer(index) {
   if (players[index]) {
-    try {
-      players[index].destroy();
-    } catch (e) {}
+    try { players[index].destroy(); } catch (e) {}
     delete players[index];
   }
-  const oldIframe = document.getElementById(`ytplayer-${index}`);
-  if (oldIframe) oldIframe.remove();
+  const old = document.getElementById(`ytplayer-${index}`);
+  if (old) old.remove();
   createPlayerForSlide(index);
 }
 
-// --- プレーヤー停止 ---
 function pausePlayer(index) {
   if (players[index]) {
-    try {
-      players[index].pauseVideo();
-    } catch (e) {}
+    try { players[index].pauseVideo(); } catch (e) {}
   }
 }
 
-// --- 動画情報更新 ---
+function destroyAllPlayers() {
+  Object.keys(players).forEach(key => {
+    try { players[key].destroy(); } catch (e) {}
+  });
+  players = {};
+}
+
+// ============================================
+// UI更新
+// ============================================
+
 function updateVideoInfo(index) {
-  const video = VIDEOS[index];
+  if (index >= filteredVideos.length) return;
+  const video = filteredVideos[index];
+  const catLabel = CATEGORIES.find(c => c.key === video.category)?.label || '';
+  document.getElementById('videoCategory').textContent = catLabel;
   document.getElementById('videoTitle').textContent = video.title;
   document.getElementById('videoDescription').textContent = video.description;
 }
 
-// --- ドットインジケーター更新 ---
 function updateDots(index) {
-  const dotsContainer = document.getElementById('swipeDots');
-  dotsContainer.innerHTML = VIDEOS.map((_, i) =>
+  const container = document.getElementById('swipeDots');
+  container.innerHTML = filteredVideos.map((_, i) =>
     `<div class="swipe-dot ${i === index ? 'active' : ''}"></div>`
   ).join('');
 }
 
-// --- 動画グリッド更新 ---
 function updateVideoGrid(index) {
   const cards = document.querySelectorAll('.video-card');
   cards.forEach((card, i) => {
@@ -337,99 +474,67 @@ function updateVideoGrid(index) {
   });
 }
 
-// --- 画面回転ハンドラ ---
+// ============================================
+// 画面回転 & 横画面コントロール
+// ============================================
+
 function setupOrientationHandler() {
-  const checkOrientation = () => {
-    const wasLandscape = isLandscape;
+  const check = () => {
+    const was = isLandscape;
     isLandscape = window.innerWidth > window.innerHeight;
-
-    if (isLandscape && !wasLandscape) {
-      enterLandscapeMode();
-    } else if (!isLandscape && wasLandscape) {
-      exitLandscapeMode();
-    }
+    if (isLandscape && !was) enterLandscapeMode();
+    else if (!isLandscape && was) exitLandscapeMode();
   };
-
-  window.addEventListener('resize', checkOrientation);
-  window.addEventListener('orientationchange', () => {
-    setTimeout(checkOrientation, 100);
-  });
-
-  // 初期チェック
-  checkOrientation();
+  window.addEventListener('resize', check);
+  window.addEventListener('orientationchange', () => setTimeout(check, 100));
+  check();
 }
 
-// --- 横画面モード開始 ---
 function enterLandscapeMode() {
   const overlay = document.getElementById('landscapeOverlay');
-  updateLandscapeUI(currentIndex);
-
-  // 一度オーバーレイを表示してから自動で隠す
+  updateLandscapeUI(currentSlideIndex);
   overlay.classList.add('visible');
   resetOverlayTimer();
 }
 
-// --- 横画面モード終了 ---
 function exitLandscapeMode() {
-  const overlay = document.getElementById('landscapeOverlay');
-  overlay.classList.remove('visible');
+  document.getElementById('landscapeOverlay').classList.remove('visible');
   clearTimeout(overlayTimer);
 }
 
-// --- 横画面UI更新 ---
 function updateLandscapeUI(index) {
-  const video = VIDEOS[index];
+  if (index >= filteredVideos.length) return;
+  const video = filteredVideos[index];
   document.getElementById('landscapeTitle').textContent = video.title;
-  document.getElementById('videoCounter').textContent = `${index + 1} / ${VIDEOS.length}`;
-
-  // ボタン状態
+  document.getElementById('videoCounter').textContent = `${index + 1} / ${filteredVideos.length}`;
   document.getElementById('prevBtn').style.visibility = index > 0 ? 'visible' : 'hidden';
-  document.getElementById('nextBtn').style.visibility = index < VIDEOS.length - 1 ? 'visible' : 'hidden';
+  document.getElementById('nextBtn').style.visibility = index < filteredVideos.length - 1 ? 'visible' : 'hidden';
 }
 
-// --- 横画面コントロール ---
 function setupLandscapeControls() {
-  const overlay = document.getElementById('landscapeOverlay');
-  const playerSection = document.getElementById('playerSection');
-
-  // タップでオーバーレイ表示/非表示
-  playerSection.addEventListener('click', (e) => {
+  document.getElementById('playerSection').addEventListener('click', (e) => {
     if (!isLandscape) return;
-    // iframe内のクリックは検知できないので、wrapperエリアのみ
-    if (e.target.closest('.video-frame-wrapper')) {
-      toggleOverlay();
-    }
+    if (e.target.closest('.video-frame-wrapper')) toggleOverlay();
   });
 
-  // 前の動画ボタン
   document.getElementById('prevBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (currentIndex > 0) {
-      goToVideo(currentIndex - 1);
-    }
+    if (currentSlideIndex > 0) goToVideo(currentSlideIndex - 1);
     resetOverlayTimer();
   });
 
-  // 次の動画ボタン
   document.getElementById('nextBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (currentIndex < VIDEOS.length - 1) {
-      goToVideo(currentIndex + 1);
-    }
+    if (currentSlideIndex < filteredVideos.length - 1) goToVideo(currentSlideIndex + 1);
     resetOverlayTimer();
   });
 
-  // 戻るボタン（横画面時は画面ロック解除を促す的な意味で）
   document.getElementById('landscapeBackBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    // LIFFの場合はウィンドウを閉じる
-    if (LIFF_ID && liff.isInClient()) {
-      liff.closeWindow();
-    }
+    if (LIFF_ID && liff.isInClient()) liff.closeWindow();
   });
 }
 
-// --- オーバーレイ表示トグル ---
 function toggleOverlay() {
   const overlay = document.getElementById('landscapeOverlay');
   if (overlay.classList.contains('visible')) {
@@ -441,11 +546,9 @@ function toggleOverlay() {
   }
 }
 
-// --- オーバーレイ自動非表示タイマー ---
 function resetOverlayTimer() {
   clearTimeout(overlayTimer);
   overlayTimer = setTimeout(() => {
-    const overlay = document.getElementById('landscapeOverlay');
-    overlay.classList.remove('visible');
+    document.getElementById('landscapeOverlay').classList.remove('visible');
   }, 4000);
 }
