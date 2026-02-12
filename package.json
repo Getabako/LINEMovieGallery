@@ -1,0 +1,9 @@
+{
+  "name": "line-movie-gallery",
+  "version": "1.0.0",
+  "description": "秋田ノーザンハピネッツ MOVIE GALLERY - LINE LIFF App",
+  "scripts": {
+    "serve": "npx serve -l 3000",
+    "dev": "npx serve -l 3000 --cors"
+  }
+}
