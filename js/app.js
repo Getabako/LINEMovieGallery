@@ -83,14 +83,17 @@ let currentSlideIndex = 0;
 let filteredVideos = [...ALL_VIDEOS];
 let activeCategory = 'all';
 let searchQuery = '';
-let isLandscape = false;
+let isFullscreenMode = false; // 全画面モード（横画面 or 手動フルスクリーン）
 let overlayTimer = null;
 let ytApiReady = false;
 let appInitialized = false;
 let searchDebounceTimer = null;
 let liffAvailable = false;
 
-// --- YouTube IFrame API Ready ---
+// ============================================
+// 初期化
+// ============================================
+
 window.onYouTubeIframeAPIReady = function () {
   ytApiReady = true;
   if (appInitialized && filteredVideos.length > 0) {
@@ -98,90 +101,42 @@ window.onYouTubeIframeAPIReady = function () {
   }
 };
 
-// --- YouTube API を動的に読み込み（タイムアウト付き） ---
 function loadYouTubeAPI() {
   return new Promise((resolve) => {
-    // 既に読み込まれている場合
-    if (window.YT && window.YT.Player) {
-      ytApiReady = true;
-      resolve();
-      return;
-    }
-
+    if (window.YT && window.YT.Player) { ytApiReady = true; resolve(); return; }
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
-
-    const timeout = setTimeout(() => {
-      console.warn('YouTube API load timeout');
-      resolve(); // タイムアウトしてもアプリは続行
-    }, 8000);
-
-    const origCallback = window.onYouTubeIframeAPIReady;
+    const timeout = setTimeout(() => { resolve(); }, 8000);
+    const orig = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = function () {
-      clearTimeout(timeout);
-      ytApiReady = true;
-      if (origCallback) origCallback();
-      resolve();
+      clearTimeout(timeout); ytApiReady = true; if (orig) orig(); resolve();
     };
-
-    tag.onerror = () => {
-      clearTimeout(timeout);
-      console.warn('YouTube API load failed');
-      resolve(); // 失敗してもアプリは続行
-    };
-
+    tag.onerror = () => { clearTimeout(timeout); resolve(); };
     document.head.appendChild(tag);
   });
 }
 
-// --- LIFF を安全に初期化 ---
 async function initLIFF() {
-  if (!LIFF_ID) return;
-  if (window.__liffLoadFailed || typeof liff === 'undefined') {
-    console.warn('LIFF SDK not available');
-    return;
-  }
-  try {
-    await liff.init({ liffId: LIFF_ID });
-    liffAvailable = true;
-  } catch (e) {
-    console.warn('LIFF init failed:', e);
-  }
+  if (!LIFF_ID || window.__liffLoadFailed || typeof liff === 'undefined') return;
+  try { await liff.init({ liffId: LIFF_ID }); liffAvailable = true; } catch (e) { console.warn('LIFF:', e); }
 }
 
-// --- LIFF 安全ヘルパー ---
 function isInLineClient() {
-  try {
-    return liffAvailable && liff.isInClient();
-  } catch (e) {
-    return false;
-  }
+  try { return liffAvailable && liff.isInClient(); } catch (e) { return false; }
 }
 
-// --- アプリ初期化 ---
-document.addEventListener('DOMContentLoaded', function () {
-  initApp();
-});
+document.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
-  // LIFF初期化（失敗してもアプリは続行）
   await initLIFF();
-
-  // UIを構築
   buildFilterChips();
   setupSearch();
   applyFilter();
-  setupOrientationHandler();
-  setupLandscapeControls();
-
+  setupFullscreenHandler();
+  setupFsControls();
   appInitialized = true;
-
-  // YouTube APIを動的読み込み
   await loadYouTubeAPI();
-
-  if (ytApiReady && filteredVideos.length > 0) {
-    createPlayerForSlide(0);
-  }
+  if (ytApiReady && filteredVideos.length > 0) createPlayerForSlide(0);
 }
 
 // ============================================
@@ -193,20 +148,17 @@ function buildFilterChips() {
   scroll.innerHTML = CATEGORIES.map(cat =>
     `<button class="filter-chip ${cat.key === 'all' ? 'active' : ''}" data-category="${cat.key}">${cat.label}</button>`
   ).join('');
-
   scroll.addEventListener('click', (e) => {
     const chip = e.target.closest('.filter-chip');
-    if (!chip) return;
-    const category = chip.dataset.category;
-    setActiveCategory(category);
+    if (chip) setActiveCategory(chip.dataset.category);
   });
 }
 
 function setActiveCategory(category) {
   activeCategory = category;
-  document.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.dataset.category === category);
-  });
+  document.querySelectorAll('.filter-chip').forEach(chip =>
+    chip.classList.toggle('active', chip.dataset.category === category)
+  );
   applyFilter();
 }
 
@@ -219,64 +171,40 @@ function setupSearch() {
     const val = input.value.trim();
     clearBtn.style.display = val ? 'flex' : 'none';
     clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => {
-      searchQuery = val;
-      applyFilter();
-    }, 250);
+    searchDebounceTimer = setTimeout(() => { searchQuery = val; applyFilter(); }, 250);
   });
 
   clearBtn.addEventListener('click', () => {
-    input.value = '';
-    clearBtn.style.display = 'none';
-    searchQuery = '';
-    applyFilter();
+    input.value = ''; clearBtn.style.display = 'none'; searchQuery = ''; applyFilter();
   });
 
   resetBtn.addEventListener('click', () => {
-    input.value = '';
-    clearBtn.style.display = 'none';
-    searchQuery = '';
-    setActiveCategory('all');
+    input.value = ''; clearBtn.style.display = 'none'; searchQuery = ''; setActiveCategory('all');
   });
 }
 
 function applyFilter() {
-  // すべてのプレーヤーを停止・破棄
   destroyAllPlayers();
-
-  // フィルタリング
   filteredVideos = ALL_VIDEOS.filter(video => {
-    const matchCategory = activeCategory === 'all' || video.category === activeCategory;
-    if (!matchCategory) return false;
+    const matchCat = activeCategory === 'all' || video.category === activeCategory;
+    if (!matchCat) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      video.title.toLowerCase().includes(q) ||
-      video.description.toLowerCase().includes(q) ||
-      video.tags.some(tag => tag.toLowerCase().includes(q))
-    );
+    return video.title.toLowerCase().includes(q) ||
+           video.description.toLowerCase().includes(q) ||
+           video.tags.some(tag => tag.toLowerCase().includes(q));
   });
-
   currentSlideIndex = 0;
 
-  // UI更新
   const hasResults = filteredVideos.length > 0;
-  const playerSection = document.getElementById('playerSection');
-  const swipeIndicator = document.getElementById('swipeIndicator');
-  const videoInfo = document.getElementById('videoInfo');
-  const videoGrid = document.getElementById('videoGrid');
-  const noResults = document.getElementById('noResults');
+  document.getElementById('playerSection').classList.toggle('hidden', !hasResults);
+  document.getElementById('playerBar').classList.toggle('hidden', !hasResults);
+  document.getElementById('videoInfo').classList.toggle('hidden', !hasResults);
+  document.getElementById('videoGrid').style.display = hasResults ? '' : 'none';
+  document.getElementById('noResults').style.display = hasResults ? 'none' : 'flex';
 
-  playerSection.classList.toggle('hidden', !hasResults);
-  swipeIndicator.classList.toggle('hidden', !hasResults);
-  videoInfo.classList.toggle('hidden', !hasResults);
-  videoGrid.style.display = hasResults ? '' : 'none';
-  noResults.style.display = hasResults ? 'none' : 'flex';
-
-  // 見出し更新
-  const categoryLabel = CATEGORIES.find(c => c.key === activeCategory)?.label || 'すべて';
-  document.getElementById('listHeading').textContent =
-    activeCategory === 'all' ? 'ALL MOVIES' : categoryLabel;
+  const catLabel = CATEGORIES.find(c => c.key === activeCategory)?.label || 'すべて';
+  document.getElementById('listHeading').textContent = activeCategory === 'all' ? 'ALL MOVIES' : catLabel;
   document.getElementById('listCount').textContent = `${filteredVideos.length}本`;
 
   if (hasResults) {
@@ -285,10 +213,7 @@ function applyFilter() {
     initSwiper();
     updateVideoInfo(0);
     updateDots(0);
-
-    if (ytApiReady) {
-      createPlayerForSlide(0);
-    }
+    if (ytApiReady) createPlayerForSlide(0);
   }
 }
 
@@ -298,108 +223,77 @@ function applyFilter() {
 
 function buildSwiperSlides() {
   const wrapper = document.getElementById('swiperWrapper');
-  wrapper.innerHTML = filteredVideos.map((video, index) => `
-    <div class="swiper-slide" data-index="${index}">
-      <div class="video-frame-wrapper" id="playerWrapper-${index}">
-        <div class="video-thumbnail-slide" id="thumbnail-${index}">
+  wrapper.innerHTML = filteredVideos.map((video, i) => `
+    <div class="swiper-slide" data-index="${i}">
+      <div class="video-frame-wrapper" id="playerWrapper-${i}">
+        <div class="video-thumbnail-slide" id="thumbnail-${i}">
           <img src="https://img.youtube.com/vi/${video.id}/hqdefault.jpg" alt="${video.title}">
           <div class="thumbnail-play-icon"></div>
         </div>
-        <div class="touch-overlay" data-index="${index}">
-          <div class="tap-to-play" id="tapIcon-${index}"></div>
+        <div class="touch-overlay" data-index="${i}">
+          <div class="tap-to-play" id="tapIcon-${i}"></div>
         </div>
       </div>
     </div>
   `).join('');
-
-  document.querySelectorAll('.touch-overlay').forEach(overlay => {
-    setupTouchOverlay(overlay);
-  });
+  document.querySelectorAll('.touch-overlay').forEach(setupTouchOverlay);
 }
 
 function setupTouchOverlay(overlay) {
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchStartTime = 0;
-  const TAP_THRESHOLD = 15;
-  const TAP_TIME = 300;
-
+  let sx = 0, sy = 0, st = 0;
   overlay.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    touchStartTime = Date.now();
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
   }, { passive: true });
-
   overlay.addEventListener('touchend', (e) => {
-    const touch = e.changedTouches[0];
-    const dx = Math.abs(touch.clientX - touchStartX);
-    const dy = Math.abs(touch.clientY - touchStartY);
-    const dt = Date.now() - touchStartTime;
-    if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && dt < TAP_TIME) {
-      const index = parseInt(overlay.dataset.index);
-      togglePlayPause(index);
+    const t = e.changedTouches[0];
+    if (Math.abs(t.clientX - sx) < 15 && Math.abs(t.clientY - sy) < 15 && Date.now() - st < 300) {
+      const idx = parseInt(overlay.dataset.index);
+      if (isFullscreenMode) { toggleFsOverlay(); } else { togglePlayPause(idx); }
     }
   }, { passive: true });
-
   overlay.addEventListener('click', () => {
-    const index = parseInt(overlay.dataset.index);
-    togglePlayPause(index);
+    const idx = parseInt(overlay.dataset.index);
+    if (isFullscreenMode) { toggleFsOverlay(); } else { togglePlayPause(idx); }
   });
 }
 
 function togglePlayPause(index) {
   const player = players[index];
-  if (!player) {
-    createPlayerForSlide(index);
-    return;
-  }
+  if (!player) { createPlayerForSlide(index); return; }
   try {
     const state = player.getPlayerState();
-    const tapIcon = document.getElementById(`tapIcon-${index}`);
+    const icon = document.getElementById(`tapIcon-${index}`);
     if (state === YT.PlayerState.PLAYING) {
       player.pauseVideo();
-      if (tapIcon) {
-        tapIcon.classList.add('paused', 'show');
-        setTimeout(() => tapIcon.classList.remove('show'), 800);
-      }
+      if (icon) { icon.classList.add('paused', 'show'); setTimeout(() => icon.classList.remove('show'), 800); }
     } else {
       player.playVideo();
-      if (tapIcon) {
-        tapIcon.classList.remove('paused');
-        tapIcon.classList.add('show');
-        setTimeout(() => tapIcon.classList.remove('show'), 800);
-      }
+      if (icon) { icon.classList.remove('paused'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 800); }
     }
-  } catch (e) {
-    createPlayerForSlide(index);
-  }
+  } catch (e) { createPlayerForSlide(index); }
 }
 
 function buildVideoGrid() {
   const grid = document.getElementById('videoGrid');
-  grid.innerHTML = filteredVideos.map((video, index) => {
+  grid.innerHTML = filteredVideos.map((video, i) => {
     const catLabel = CATEGORIES.find(c => c.key === video.category)?.label || '';
     return `
-      <div class="video-card ${index === 0 ? 'active' : ''}" data-index="${index}" onclick="goToVideo(${index})">
+      <div class="video-card ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="goToVideo(${i})">
         <div class="card-thumbnail">
           <img src="https://img.youtube.com/vi/${video.id}/mqdefault.jpg" alt="${video.title}">
           <span class="card-category-badge">${catLabel}</span>
-          ${index === 0 ? '<span class="card-now-playing">再生中</span>' : ''}
+          ${i === 0 ? '<span class="card-now-playing">再生中</span>' : ''}
         </div>
         <div class="card-info">
           <div class="card-title">${video.title}</div>
           <div class="card-meta">秋田ノーザンハピネッツ</div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
 function initSwiper() {
-  if (swiper) {
-    swiper.destroy(true, true);
-    swiper = null;
-  }
+  if (swiper) { swiper.destroy(true, true); swiper = null; }
   swiper = new Swiper('#playerSwiper', {
     slidesPerView: 1,
     spaceBetween: 0,
@@ -408,11 +302,7 @@ function initSwiper() {
     speed: 300,
     threshold: 10,
     touchEventsTarget: 'container',
-    on: {
-      slideChange: function () {
-        onSlideChange(this.activeIndex);
-      },
-    },
+    on: { slideChange: function () { onSlideChange(this.activeIndex); } },
   });
 }
 
@@ -422,22 +312,18 @@ function onSlideChange(newIndex) {
   updateVideoInfo(newIndex);
   updateDots(newIndex);
   updateVideoGrid(newIndex);
-  updateLandscapeUI(newIndex);
+  updateFsUI(newIndex);
   createPlayerForSlide(newIndex);
 }
 
 function goToVideo(index) {
-  if (swiper) {
-    swiper.slideTo(index);
-  }
+  if (swiper) swiper.slideTo(index);
 }
 
 function createPlayerForSlide(index) {
   if (!ytApiReady || !window.YT || !window.YT.Player) return;
   if (index >= filteredVideos.length) return;
-
   const video = filteredVideos[index];
-  const thumbnail = document.getElementById(`thumbnail-${index}`);
   const wrapper = document.getElementById(`playerWrapper-${index}`);
   if (!wrapper) return;
 
@@ -446,60 +332,43 @@ function createPlayerForSlide(index) {
     return;
   }
 
-  if (thumbnail) thumbnail.style.display = 'none';
+  const thumb = document.getElementById(`thumbnail-${index}`);
+  if (thumb) thumb.style.display = 'none';
 
-  const playerDiv = document.createElement('div');
-  playerDiv.id = `ytplayer-${index}`;
-  wrapper.appendChild(playerDiv);
+  const div = document.createElement('div');
+  div.id = `ytplayer-${index}`;
+  wrapper.appendChild(div);
 
   try {
     players[index] = new YT.Player(`ytplayer-${index}`, {
       videoId: video.id,
-      playerVars: {
-        autoplay: 1,
-        playsinline: 1,
-        rel: 0,
-        modestbranding: 1,
-        controls: 1,
-        fs: 0,
-      },
+      playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, controls: 1, fs: 0 },
       events: {
-        onReady: (event) => { try { event.target.playVideo(); } catch (e) {} },
-        onError: (event) => { console.warn('YT Player error:', event.data); },
-        onStateChange: (event) => {
-          if (event.data === YT.PlayerState.ENDED) {
-            if (currentSlideIndex < filteredVideos.length - 1) {
-              goToVideo(currentSlideIndex + 1);
-            }
+        onReady: (e) => { try { e.target.playVideo(); } catch (err) {} },
+        onError: (e) => { console.warn('YT error:', e.data); },
+        onStateChange: (e) => {
+          if (e.data === YT.PlayerState.ENDED && currentSlideIndex < filteredVideos.length - 1) {
+            goToVideo(currentSlideIndex + 1);
           }
         },
       },
     });
-  } catch (e) {
-    console.warn('Failed to create YT player:', e);
-  }
+  } catch (e) { console.warn('YT player create failed:', e); }
 }
 
 function rebuildPlayer(index) {
-  if (players[index]) {
-    try { players[index].destroy(); } catch (e) {}
-    delete players[index];
-  }
+  if (players[index]) { try { players[index].destroy(); } catch (e) {} delete players[index]; }
   const old = document.getElementById(`ytplayer-${index}`);
   if (old) old.remove();
   createPlayerForSlide(index);
 }
 
 function pausePlayer(index) {
-  if (players[index]) {
-    try { players[index].pauseVideo(); } catch (e) {}
-  }
+  if (players[index]) { try { players[index].pauseVideo(); } catch (e) {} }
 }
 
 function destroyAllPlayers() {
-  Object.keys(players).forEach(key => {
-    try { players[key].destroy(); } catch (e) {}
-  });
+  Object.keys(players).forEach(k => { try { players[k].destroy(); } catch (e) {} });
   players = {};
 }
 
@@ -517,94 +386,176 @@ function updateVideoInfo(index) {
 }
 
 function updateDots(index) {
-  const container = document.getElementById('swipeDots');
-  container.innerHTML = filteredVideos.map((_, i) =>
+  document.getElementById('swipeDots').innerHTML = filteredVideos.map((_, i) =>
     `<div class="swipe-dot ${i === index ? 'active' : ''}"></div>`
   ).join('');
 }
 
 function updateVideoGrid(index) {
-  const cards = document.querySelectorAll('.video-card');
-  cards.forEach((card, i) => {
+  document.querySelectorAll('.video-card').forEach((card, i) => {
     card.classList.toggle('active', i === index);
     const badge = card.querySelector('.card-now-playing');
-    if (i === index) {
-      if (!badge) {
-        const thumb = card.querySelector('.card-thumbnail');
-        const span = document.createElement('span');
-        span.className = 'card-now-playing';
-        span.textContent = '再生中';
-        thumb.appendChild(span);
-      }
-    } else {
-      if (badge) badge.remove();
-    }
+    if (i === index && !badge) {
+      const span = document.createElement('span');
+      span.className = 'card-now-playing';
+      span.textContent = '再生中';
+      card.querySelector('.card-thumbnail').appendChild(span);
+    } else if (i !== index && badge) { badge.remove(); }
   });
 }
 
 // ============================================
-// 画面回転 & 横画面コントロール
+// フルスクリーン（横画面自動 + ボタン手動）
 // ============================================
 
-function setupOrientationHandler() {
-  const check = () => {
-    const was = isLandscape;
-    isLandscape = window.innerWidth > window.innerHeight;
-    if (isLandscape && !was) enterLandscapeMode();
-    else if (!isLandscape && was) exitLandscapeMode();
+function setupFullscreenHandler() {
+  // 画面回転検知
+  const checkOrientation = () => {
+    const landscape = window.innerWidth > window.innerHeight;
+    if (landscape && !isFullscreenMode) {
+      enterFullscreenMode(true);
+    } else if (!landscape && isFullscreenMode) {
+      // 横画面→縦画面: Fullscreen APIも解除
+      exitFullscreenMode();
+    }
   };
-  window.addEventListener('resize', check);
-  window.addEventListener('orientationchange', () => setTimeout(check, 100));
-  check();
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 150));
+  checkOrientation();
+
+  // 全画面ボタン（縦画面で押す）
+  document.getElementById('fullscreenBtn').addEventListener('click', () => {
+    enterFullscreenMode(false);
+  });
+
+  // Fullscreen API の状態変化を監視
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }
 
-function enterLandscapeMode() {
-  const overlay = document.getElementById('landscapeOverlay');
-  updateLandscapeUI(currentSlideIndex);
-  overlay.classList.add('visible');
+function onFullscreenChange() {
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!fsEl && isFullscreenMode) {
+    // ブラウザ側でフルスクリーンが解除された
+    isFullscreenMode = false;
+    document.body.classList.remove('fs-active');
+    document.getElementById('fsOverlay').classList.remove('visible');
+    clearTimeout(overlayTimer);
+    // Swiperリサイズ
+    setTimeout(() => { if (swiper) swiper.update(); }, 100);
+  }
+}
+
+function enterFullscreenMode(isAutoLandscape) {
+  isFullscreenMode = true;
+  document.body.classList.add('fs-active');
+  updateFsUI(currentSlideIndex);
+
+  // Fullscreen APIを試行（ブラウザクロームを隠す）
+  const container = document.getElementById('fullscreenContainer');
+  if (!isAutoLandscape) {
+    // 手動ボタン：Fullscreen APIでブラウザバーを隠す
+    requestFS(container);
+    // 画面を横向きにロック試行
+    tryLockLandscape();
+  } else {
+    // 横画面自動：Fullscreen APIを試行
+    requestFS(container);
+  }
+
+  // オーバーレイ表示
+  document.getElementById('fsOverlay').classList.add('visible');
   resetOverlayTimer();
+
+  // Swiperリサイズ
+  setTimeout(() => { if (swiper) swiper.update(); }, 100);
 }
 
-function exitLandscapeMode() {
-  document.getElementById('landscapeOverlay').classList.remove('visible');
+function exitFullscreenMode() {
+  isFullscreenMode = false;
+  document.body.classList.remove('fs-active');
+  document.getElementById('fsOverlay').classList.remove('visible');
   clearTimeout(overlayTimer);
+
+  // Fullscreen API解除
+  exitFS();
+  // 画面ロック解除
+  tryUnlockOrientation();
+
+  setTimeout(() => { if (swiper) swiper.update(); }, 100);
 }
 
-function updateLandscapeUI(index) {
+// --- Fullscreen API ヘルパー ---
+function requestFS(el) {
+  try {
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } catch (e) {}
+}
+
+function exitFS() {
+  try {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fsEl) {
+      if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  } catch (e) {}
+}
+
+function tryLockLandscape() {
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(() => {});
+    }
+  } catch (e) {}
+}
+
+function tryUnlockOrientation() {
+  try {
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
+  } catch (e) {}
+}
+
+// ============================================
+// フルスクリーン UI コントロール
+// ============================================
+
+function updateFsUI(index) {
   if (index >= filteredVideos.length) return;
   const video = filteredVideos[index];
-  document.getElementById('landscapeTitle').textContent = video.title;
-  document.getElementById('videoCounter').textContent = `${index + 1} / ${filteredVideos.length}`;
-  document.getElementById('prevBtn').style.visibility = index > 0 ? 'visible' : 'hidden';
-  document.getElementById('nextBtn').style.visibility = index < filteredVideos.length - 1 ? 'visible' : 'hidden';
+  document.getElementById('fsTitle').textContent = video.title;
+  document.getElementById('fsCounter').textContent = `${index + 1} / ${filteredVideos.length}`;
+  document.getElementById('fsPrevBtn').style.visibility = index > 0 ? 'visible' : 'hidden';
+  document.getElementById('fsNextBtn').style.visibility = index < filteredVideos.length - 1 ? 'visible' : 'hidden';
 }
 
-function setupLandscapeControls() {
-  document.getElementById('playerSection').addEventListener('click', (e) => {
-    if (!isLandscape) return;
-    if (e.target.closest('.video-frame-wrapper')) toggleOverlay();
+function setupFsControls() {
+  // 閉じるボタン → フルスクリーン解除
+  document.getElementById('fsBackBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    exitFullscreenMode();
   });
 
-  document.getElementById('prevBtn').addEventListener('click', (e) => {
+  // 前の動画
+  document.getElementById('fsPrevBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     if (currentSlideIndex > 0) goToVideo(currentSlideIndex - 1);
     resetOverlayTimer();
   });
 
-  document.getElementById('nextBtn').addEventListener('click', (e) => {
+  // 次の動画
+  document.getElementById('fsNextBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     if (currentSlideIndex < filteredVideos.length - 1) goToVideo(currentSlideIndex + 1);
     resetOverlayTimer();
   });
-
-  document.getElementById('landscapeBackBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (isInLineClient()) { try { liff.closeWindow(); } catch (e) {} }
-  });
 }
 
-function toggleOverlay() {
-  const overlay = document.getElementById('landscapeOverlay');
+function toggleFsOverlay() {
+  const overlay = document.getElementById('fsOverlay');
   if (overlay.classList.contains('visible')) {
     overlay.classList.remove('visible');
     clearTimeout(overlayTimer);
@@ -617,6 +568,6 @@ function toggleOverlay() {
 function resetOverlayTimer() {
   clearTimeout(overlayTimer);
   overlayTimer = setTimeout(() => {
-    document.getElementById('landscapeOverlay').classList.remove('visible');
+    document.getElementById('fsOverlay').classList.remove('visible');
   }, 4000);
 }
