@@ -441,9 +441,9 @@ body.landscape-mode .mascot-bikky {
   pointer-events: none;
 }
 
-.fs-overlay.visible {
-  pointer-events: auto;
-}
+/* オーバーレイ本体は常にpointer-events:none。
+   ボタンがあるバーだけautoにすることで、
+   スワイプがSwiperに届くようにする */
 
 .fs-top-bar {
   position: absolute;
@@ -463,6 +463,7 @@ body.landscape-mode .mascot-bikky {
 
 .fs-overlay.visible .fs-top-bar {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .fs-bottom-bar {
@@ -481,6 +482,7 @@ body.landscape-mode .mascot-bikky {
 
 .fs-overlay.visible .fs-bottom-bar {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .fs-back-btn {
