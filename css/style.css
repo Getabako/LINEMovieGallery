@@ -779,6 +779,65 @@ body.fs-active .video-list {
   display: none !important;
 }
 
+/* ============================================
+   CSS回転による強制横向きフルスクリーン
+   （自動回転オフ + ネイティブAPI非対応時のフォールバック）
+   body.fs-rotate が付くとコンテナを90度回転
+   ============================================ */
+
+body.fs-rotate .fullscreen-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* 幅と高さを入れ替え: width=ビューポート高さ, height=ビューポート幅 */
+  width: 100vh;
+  width: 100dvh;
+  height: 100vw;
+  transform: rotate(90deg);
+  transform-origin: top left;
+  /* 回転後の位置補正: 左上起点で回転するのでX方向にビューポート幅分ずらす */
+  translate: 100vw 0;
+  z-index: 9999;
+  background: #000;
+}
+
+body.fs-rotate .player-section {
+  width: 100%;
+  height: 100%;
+}
+
+body.fs-rotate .player-swiper {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+body.fs-rotate .player-swiper .swiper-wrapper {
+  height: 100% !important;
+}
+
+body.fs-rotate .player-swiper .swiper-slide {
+  height: 100% !important;
+}
+
+body.fs-rotate .video-frame-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+body.fs-rotate .video-frame-wrapper iframe {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+body.fs-rotate .fs-overlay {
+  display: block;
+}
+
+body.fs-rotate .mascot-bikky {
+  display: none;
+}
+
 /* Fullscreen API でフルスクリーンになった場合 */
 .fullscreen-container:fullscreen {
   width: 100vw;

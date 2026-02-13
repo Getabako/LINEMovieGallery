@@ -480,7 +480,7 @@ function onFullscreenChange() {
   if (!fsEl && isFullscreenMode) {
     // ブラウザ側でフルスクリーンが解除された
     isFullscreenMode = false;
-    document.body.classList.remove('fs-active', 'landscape-mode');
+    document.body.classList.remove('fs-active', 'landscape-mode', 'fs-rotate');
     document.getElementById('fsOverlay').classList.remove('visible');
     clearTimeout(overlayTimer);
     // Swiperリサイズ
@@ -493,15 +493,30 @@ function enterFullscreenMode(isAutoLandscape) {
   document.body.classList.add('fs-active');
   updateFsUI(currentSlideIndex);
 
-  // Fullscreen APIを試行（ブラウザクロームを隠す）
   const container = document.getElementById('fullscreenContainer');
+
   if (!isAutoLandscape) {
-    // 手動ボタン：Fullscreen APIでブラウザバーを隠す + 横向きロック
-    requestFS(container).then(() => {
-      tryLockLandscape();
-    });
+    // 手動ボタン: まずネイティブAPI試行、ダメならCSS回転フォールバック
+    const alreadyLandscape = isLandscape();
+    if (alreadyLandscape) {
+      // すでに横画面ならそのままFullscreen API
+      document.body.classList.add('landscape-mode');
+      requestFS(container);
+    } else {
+      // 縦画面から: ネイティブ横向きロックを試行
+      requestFS(container).then(() => {
+        return tryLockLandscape();
+      }).then((locked) => {
+        if (!locked) {
+          // ネイティブロック失敗 → CSS回転で強制横向き
+          document.body.classList.add('fs-rotate');
+        }
+        setTimeout(() => { if (swiper) swiper.update(); }, 200);
+      });
+    }
   } else {
-    // 横画面自動：Fullscreen APIを試行
+    // 横画面自動: Fullscreen APIを試行
+    document.body.classList.add('landscape-mode');
     requestFS(container);
   }
 
@@ -516,7 +531,7 @@ function enterFullscreenMode(isAutoLandscape) {
 
 function exitFullscreenMode() {
   isFullscreenMode = false;
-  document.body.classList.remove('fs-active', 'landscape-mode');
+  document.body.classList.remove('fs-active', 'landscape-mode', 'fs-rotate');
   document.getElementById('fsOverlay').classList.remove('visible');
   clearTimeout(overlayTimer);
 
@@ -550,9 +565,10 @@ function exitFS() {
 function tryLockLandscape() {
   try {
     if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(() => {});
+      return screen.orientation.lock('landscape').then(() => true).catch(() => false);
     }
   } catch (e) {}
+  return Promise.resolve(false);
 }
 
 function tryUnlockOrientation() {
