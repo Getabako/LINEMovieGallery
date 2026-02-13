@@ -4,8 +4,8 @@
    ============================================ */
 
 :root {
-  --primary: #C8102E;
-  --primary-dark: #A00D24;
+  --primary: #e40274;
+  --primary-dark: #b8015c;
   --bg-dark: #0a0a0a;
   --bg-card: #1a1a1a;
   --bg-surface: #141414;
@@ -51,6 +51,16 @@ html, body {
   padding-top: var(--safe-top);
 }
 
+.app-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), #ff4da6);
+}
+
 .header-inner {
   height: 44px;
   display: flex;
@@ -65,13 +75,13 @@ html, body {
 }
 
 .logo-mark {
-  background: var(--primary);
-  color: white;
-  font-weight: 900;
-  font-size: 14px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  letter-spacing: 1px;
+  display: none;
+}
+
+.logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
 }
 
 .logo-text {
@@ -93,7 +103,7 @@ html, body {
   display: flex;
   align-items: center;
   background: #1e1e1e;
-  border: 1px solid #333;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   padding: 0 12px;
   height: 40px;
@@ -167,7 +177,7 @@ html, body {
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  border: 1px solid #333;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   background: transparent;
   color: var(--text-secondary);
   transition: all 0.2s;
@@ -337,6 +347,32 @@ html, body {
   border-width: 12px 0 12px 22px;
   border-color: transparent transparent transparent white;
   margin-left: 4px;
+}
+
+/* ============================================
+   マスコットキャラクター（ビッキー）
+   ============================================ */
+
+.mascot-bikky {
+  position: absolute;
+  bottom: -10px;
+  right: 8px;
+  width: 72px;
+  height: auto;
+  z-index: 15;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  transition: opacity 0.3s;
+}
+
+body.fs-active .mascot-bikky {
+  display: none;
+}
+
+@media (orientation: landscape) {
+  .mascot-bikky {
+    display: none;
+  }
 }
 
 /* ============================================
@@ -521,7 +557,7 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--primary);
-  background: rgba(200, 16, 46, 0.15);
+  background: rgba(228, 2, 116, 0.15);
   padding: 3px 10px;
   border-radius: 4px;
   margin-bottom: 8px;
