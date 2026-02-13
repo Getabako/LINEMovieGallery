@@ -425,11 +425,7 @@ function isLandscape() {
   if (screen.orientation && screen.orientation.type) {
     return screen.orientation.type.startsWith('landscape');
   }
-  // CSS media query（キーボードに影響されない）
-  if (window.matchMedia) {
-    return window.matchMedia('(orientation: landscape)').matches;
-  }
-  // 最終フォールバック: screen寸法（キーボードで変わらない）
+  // screen寸法（キーボードで変わらない。matchMediaは使わない=キーボードで誤判定するため）
   return (screen.width || window.innerWidth) > (screen.height || window.innerHeight);
 }
 
@@ -444,24 +440,20 @@ function setupFullscreenHandler() {
     lastOrientation = landscape;
 
     if (landscape && !isFullscreenMode) {
+      document.body.classList.add('landscape-mode');
       enterFullscreenMode(true);
     } else if (!landscape && isFullscreenMode) {
+      document.body.classList.remove('landscape-mode');
       exitFullscreenMode();
     }
   };
 
-  // orientationchangeイベントを優先（実際の回転のみ発火）
+  // 画面回転イベントのみ使用（resizeは使わない＝キーボードで誤発火するため）
   if (screen.orientation) {
     screen.orientation.addEventListener('change', () => setTimeout(checkOrientation, 100));
-  } else {
-    window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 200));
   }
-  // resizeでもチェック（ただしデバウンス付き）
-  let resizeTimer = null;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(checkOrientation, 300);
-  });
+  window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 200));
+  // 初回チェック
   checkOrientation();
 
   // 全画面ボタン（縦画面で押す）
@@ -488,7 +480,7 @@ function onFullscreenChange() {
   if (!fsEl && isFullscreenMode) {
     // ブラウザ側でフルスクリーンが解除された
     isFullscreenMode = false;
-    document.body.classList.remove('fs-active');
+    document.body.classList.remove('fs-active', 'landscape-mode');
     document.getElementById('fsOverlay').classList.remove('visible');
     clearTimeout(overlayTimer);
     // Swiperリサイズ
@@ -524,7 +516,7 @@ function enterFullscreenMode(isAutoLandscape) {
 
 function exitFullscreenMode() {
   isFullscreenMode = false;
-  document.body.classList.remove('fs-active');
+  document.body.classList.remove('fs-active', 'landscape-mode');
   document.getElementById('fsOverlay').classList.remove('visible');
   clearTimeout(overlayTimer);
 

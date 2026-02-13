@@ -365,14 +365,9 @@ body {
   transition: opacity 0.3s;
 }
 
-body.fs-active .mascot-bikky {
+body.fs-active .mascot-bikky,
+body.landscape-mode .mascot-bikky {
   display: none;
-}
-
-@media (orientation: landscape) {
-  .mascot-bikky {
-    display: none;
-  }
 }
 
 /* ============================================
@@ -853,71 +848,71 @@ body.fs-active .video-list {
 }
 
 /* ============================================
-   横画面は自動でフルスクリーン風レイアウト
+   横画面モード（JSでbody.landscape-modeクラス付与）
+   ※ @media (orientation: landscape) は使わない
+   ※ キーボード表示時に誤判定するため
    ============================================ */
 
-@media (orientation: landscape) {
-  .app-header {
-    display: none;
-  }
+body.landscape-mode .app-header {
+  display: none !important;
+}
 
-  .main-content {
-    overflow: hidden;
-  }
+body.landscape-mode .main-content {
+  overflow: hidden !important;
+}
 
-  .fullscreen-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    z-index: 9000;
-    background: #000;
-  }
+body.landscape-mode .fullscreen-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 9000;
+  background: #000;
+}
 
-  .player-section {
-    width: 100%;
-    height: 100%;
-  }
+body.landscape-mode .player-section {
+  width: 100%;
+  height: 100%;
+}
 
-  .player-swiper {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: auto;
-  }
+body.landscape-mode .player-swiper {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
 
-  .player-swiper .swiper-wrapper {
-    height: 100% !important;
-  }
+body.landscape-mode .player-swiper .swiper-wrapper {
+  height: 100% !important;
+}
 
-  .player-swiper .swiper-slide {
-    height: 100% !important;
-  }
+body.landscape-mode .player-swiper .swiper-slide {
+  height: 100% !important;
+}
 
-  .video-frame-wrapper {
-    width: 100%;
-    height: 100%;
-  }
+body.landscape-mode .video-frame-wrapper {
+  width: 100%;
+  height: 100%;
+}
 
-  .video-frame-wrapper iframe {
-    width: 100% !important;
-    height: 100% !important;
-  }
+body.landscape-mode .video-frame-wrapper iframe {
+  width: 100% !important;
+  height: 100% !important;
+}
 
-  .fs-overlay {
-    display: block;
-  }
+body.landscape-mode .fs-overlay {
+  display: block;
+}
 
-  .player-bar,
-  .video-info,
-  .video-list {
-    display: none !important;
-  }
+body.landscape-mode .player-bar,
+body.landscape-mode .video-info,
+body.landscape-mode .video-list {
+  display: none !important;
+}
 
-  .mascot-bikky {
-    display: none;
-  }
+body.landscape-mode .mascot-bikky {
+  display: none;
 }
 
 /* ============================================
