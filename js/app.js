@@ -167,6 +167,18 @@ function setupSearch() {
   const clearBtn = document.getElementById('searchClear');
   const resetBtn = document.getElementById('resetFilterBtn');
 
+  // フォーカス時: スクロールを固定してキーボードによるレイアウト崩れを防止
+  input.addEventListener('focus', () => {
+    document.getElementById('mainContent').style.overflow = 'hidden';
+    // iOSでfocusが外れないよう少し遅延してスクロール位置を固定
+    setTimeout(() => window.scrollTo(0, 0), 50);
+  });
+  input.addEventListener('blur', () => {
+    document.getElementById('mainContent').style.overflow = '';
+  });
+  // タッチイベントの伝播を止めて他の要素にフォーカスが奪われないように
+  input.addEventListener('touchstart', (e) => { e.stopPropagation(); });
+
   input.addEventListener('input', () => {
     const val = input.value.trim();
     clearBtn.style.display = val ? 'flex' : 'none';
