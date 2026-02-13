@@ -408,23 +408,61 @@ function updateVideoGrid(index) {
 // フルスクリーン（横画面自動 + ボタン手動）
 // ============================================
 
+function isLandscape() {
+  // screen.orientation API（キーボード表示に影響されない）
+  if (screen.orientation && screen.orientation.type) {
+    return screen.orientation.type.startsWith('landscape');
+  }
+  // CSS media query（キーボードに影響されない）
+  if (window.matchMedia) {
+    return window.matchMedia('(orientation: landscape)').matches;
+  }
+  // 最終フォールバック: screen寸法（キーボードで変わらない）
+  return (screen.width || window.innerWidth) > (screen.height || window.innerHeight);
+}
+
 function setupFullscreenHandler() {
-  // 画面回転検知
+  // 画面回転検知（キーボード表示ではなく実際の回転のみ検知）
+  let lastOrientation = isLandscape();
+
   const checkOrientation = () => {
-    const landscape = window.innerWidth > window.innerHeight;
+    const landscape = isLandscape();
+    // 実際に方向が変わった場合のみ処理
+    if (landscape === lastOrientation) return;
+    lastOrientation = landscape;
+
     if (landscape && !isFullscreenMode) {
       enterFullscreenMode(true);
     } else if (!landscape && isFullscreenMode) {
-      // 横画面→縦画面: Fullscreen APIも解除
       exitFullscreenMode();
     }
   };
-  window.addEventListener('resize', checkOrientation);
-  window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 150));
+
+  // orientationchangeイベントを優先（実際の回転のみ発火）
+  if (screen.orientation) {
+    screen.orientation.addEventListener('change', () => setTimeout(checkOrientation, 100));
+  } else {
+    window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 200));
+  }
+  // resizeでもチェック（ただしデバウンス付き）
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(checkOrientation, 300);
+  });
   checkOrientation();
 
   // 全画面ボタン（縦画面で押す）
-  document.getElementById('fullscreenBtn').addEventListener('click', () => {
+  const fsBtn = document.getElementById('fullscreenBtn');
+  fsBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    enterFullscreenMode(false);
+  });
+  // タッチイベントも追加（LINE内ブラウザ対応）
+  fsBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     enterFullscreenMode(false);
   });
 
@@ -454,10 +492,10 @@ function enterFullscreenMode(isAutoLandscape) {
   // Fullscreen APIを試行（ブラウザクロームを隠す）
   const container = document.getElementById('fullscreenContainer');
   if (!isAutoLandscape) {
-    // 手動ボタン：Fullscreen APIでブラウザバーを隠す
-    requestFS(container);
-    // 画面を横向きにロック試行
-    tryLockLandscape();
+    // 手動ボタン：Fullscreen APIでブラウザバーを隠す + 横向きロック
+    requestFS(container).then(() => {
+      tryLockLandscape();
+    });
   } else {
     // 横画面自動：Fullscreen APIを試行
     requestFS(container);
@@ -467,8 +505,9 @@ function enterFullscreenMode(isAutoLandscape) {
   document.getElementById('fsOverlay').classList.add('visible');
   resetOverlayTimer();
 
-  // Swiperリサイズ
-  setTimeout(() => { if (swiper) swiper.update(); }, 100);
+  // Swiperリサイズ（段階的にリトライ）
+  setTimeout(() => { if (swiper) swiper.update(); }, 150);
+  setTimeout(() => { if (swiper) swiper.update(); }, 500);
 }
 
 function exitFullscreenMode() {
@@ -488,9 +527,10 @@ function exitFullscreenMode() {
 // --- Fullscreen API ヘルパー ---
 function requestFS(el) {
   try {
-    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    if (el.requestFullscreen) return el.requestFullscreen().catch(() => {});
+    else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return Promise.resolve(); }
   } catch (e) {}
+  return Promise.resolve();
 }
 
 function exitFS() {

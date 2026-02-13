@@ -742,8 +742,9 @@ body.fs-active .fullscreen-container {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   z-index: 9000;
   background: #000;
 }
@@ -759,6 +760,19 @@ body.fs-active .player-swiper {
   aspect-ratio: auto;
 }
 
+body.fs-active .player-swiper .swiper-wrapper {
+  height: 100% !important;
+}
+
+body.fs-active .player-swiper .swiper-slide {
+  height: 100% !important;
+}
+
+body.fs-active .video-frame-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
 body.fs-active .fs-overlay {
   display: block;
 }
@@ -771,8 +785,8 @@ body.fs-active .video-list {
 
 /* Fullscreen API でフルスクリーンになった場合 */
 .fullscreen-container:fullscreen {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background: #000;
 }
 
@@ -787,14 +801,27 @@ body.fs-active .video-list {
   aspect-ratio: auto;
 }
 
+.fullscreen-container:fullscreen .swiper-wrapper {
+  height: 100% !important;
+}
+
+.fullscreen-container:fullscreen .swiper-slide {
+  height: 100% !important;
+}
+
+.fullscreen-container:fullscreen .video-frame-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
 .fullscreen-container:fullscreen .fs-overlay {
   display: block;
 }
 
 /* webkit prefix */
 .fullscreen-container:-webkit-full-screen {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background: #000;
 }
 
@@ -807,6 +834,19 @@ body.fs-active .video-list {
   width: 100%;
   height: 100%;
   aspect-ratio: auto;
+}
+
+.fullscreen-container:-webkit-full-screen .swiper-wrapper {
+  height: 100% !important;
+}
+
+.fullscreen-container:-webkit-full-screen .swiper-slide {
+  height: 100% !important;
+}
+
+.fullscreen-container:-webkit-full-screen .video-frame-wrapper {
+  width: 100%;
+  height: 100%;
 }
 
 .fullscreen-container:-webkit-full-screen .fs-overlay {
@@ -831,9 +871,11 @@ body.fs-active .video-list {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
     z-index: 9000;
+    background: #000;
   }
 
   .player-section {
@@ -847,6 +889,24 @@ body.fs-active .video-list {
     aspect-ratio: auto;
   }
 
+  .player-swiper .swiper-wrapper {
+    height: 100% !important;
+  }
+
+  .player-swiper .swiper-slide {
+    height: 100% !important;
+  }
+
+  .video-frame-wrapper {
+    width: 100%;
+    height: 100%;
+  }
+
+  .video-frame-wrapper iframe {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
   .fs-overlay {
     display: block;
   }
@@ -855,6 +915,10 @@ body.fs-active .video-list {
   .video-info,
   .video-list {
     display: none !important;
+  }
+
+  .mascot-bikky {
+    display: none;
   }
 }
 
