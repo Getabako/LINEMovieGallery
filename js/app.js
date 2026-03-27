@@ -71,6 +71,7 @@ let overlayTimer = null;
 let appInitialized = false;
 let searchDebounceTimer = null;
 let liffAvailable = false;
+let userInteracted = false; // ユーザーが画面操作したか（ミュート解除用）
 
 // ============================================
 // 初期化
@@ -85,12 +86,27 @@ async function initApp() {
   applyFilter();
   setupFullscreenHandler();
   setupFsControls();
+  setupUserInteraction();
   appInitialized = true;
 }
 
 async function initLIFF() {
   if (!LIFF_ID || window.__liffLoadFailed || typeof liff === 'undefined') return;
   try { await liff.init({ liffId: LIFF_ID }); liffAvailable = true; } catch (e) { console.warn('LIFF:', e); }
+}
+
+// ユーザー初回操作でミュート解除
+function setupUserInteraction() {
+  const unlock = () => {
+    if (userInteracted) return;
+    userInteracted = true;
+    const video = document.getElementById(`video-${currentSlideIndex}`);
+    if (video) {
+      video.muted = false;
+    }
+  };
+  document.addEventListener('touchstart', unlock, { once: true });
+  document.addEventListener('click', unlock, { once: true });
 }
 
 // ============================================
@@ -178,6 +194,8 @@ function applyFilter() {
     initSwiper();
     updateVideoInfo(0);
     updateDots(0);
+    // 最初の動画を自動再生
+    playVideo(0);
   }
 }
 
@@ -193,9 +211,11 @@ function buildSwiperSlides() {
         <video
           class="slide-video"
           id="video-${i}"
-          preload="${i === 0 ? 'auto' : 'metadata'}"
+          preload="${i <= 1 ? 'auto' : 'metadata'}"
           playsinline
           webkit-playsinline
+          muted
+          loop
           src="${video.src}"
         ></video>
         <div class="touch-overlay" data-index="${i}">
@@ -207,36 +227,54 @@ function buildSwiperSlides() {
 
   // タッチオーバーレイ設定
   document.querySelectorAll('.touch-overlay').forEach(setupTouchOverlay);
-
-  // 動画終了時の自動遷移
-  filteredVideos.forEach((_, i) => {
-    const video = document.getElementById(`video-${i}`);
-    if (video) {
-      video.addEventListener('ended', () => {
-        if (currentSlideIndex === i && i < filteredVideos.length - 1) {
-          goToVideo(i + 1);
-        }
-      });
-    }
-  });
 }
 
 function setupTouchOverlay(overlay) {
   let sx = 0, sy = 0, st = 0;
+  let handledByTouch = false;
+
   overlay.addEventListener('touchstart', (e) => {
-    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    st = Date.now();
   }, { passive: true });
+
   overlay.addEventListener('touchend', (e) => {
     const t = e.changedTouches[0];
     if (Math.abs(t.clientX - sx) < 15 && Math.abs(t.clientY - sy) < 15 && Date.now() - st < 300) {
+      handledByTouch = true;
+      setTimeout(() => { handledByTouch = false; }, 500);
       const idx = parseInt(overlay.dataset.index);
-      if (isFullscreenMode) { toggleFsOverlay(); } else { togglePlayPause(idx); }
+      if (isFullscreenMode) { toggleFsOverlay(); } else { handleTap(idx); }
     }
   }, { passive: true });
+
+  // デスクトップ用 click（touchend で処理済みならスキップ）
   overlay.addEventListener('click', () => {
+    if (handledByTouch) return;
     const idx = parseInt(overlay.dataset.index);
-    if (isFullscreenMode) { toggleFsOverlay(); } else { togglePlayPause(idx); }
+    if (isFullscreenMode) { toggleFsOverlay(); } else { handleTap(idx); }
   });
+}
+
+// タップ処理: 初回はミュート解除、以降は再生/一時停止トグル
+function handleTap(index) {
+  const video = document.getElementById(`video-${index}`);
+  if (!video) return;
+
+  // ミュート中なら解除して再生継続
+  if (video.muted) {
+    video.muted = false;
+    userInteracted = true;
+    // 停止中なら再生開始
+    if (video.paused) {
+      video.play().catch(() => {});
+    }
+    return;
+  }
+
+  // 再生/一時停止トグル
+  togglePlayPause(index);
 }
 
 function togglePlayPause(index) {
@@ -245,14 +283,39 @@ function togglePlayPause(index) {
   const icon = document.getElementById(`tapIcon-${index}`);
 
   if (video.paused) {
-    // 他の動画を停止
-    filteredVideos.forEach((_, i) => { if (i !== index) pausePlayer(i); });
     video.play().catch(() => {});
     if (icon) { icon.classList.remove('paused'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 800); }
   } else {
     video.pause();
     if (icon) { icon.classList.add('paused', 'show'); setTimeout(() => icon.classList.remove('show'), 800); }
   }
+}
+
+// 動画を自動再生（ミュートならミュートのまま）
+function playVideo(index) {
+  const video = document.getElementById(`video-${index}`);
+  if (!video) return;
+
+  // ユーザー操作済みならミュート解除
+  video.muted = !userInteracted;
+  video.currentTime = 0;
+  video.play().catch(() => {
+    // ブロックされたらミュートで再試行
+    video.muted = true;
+    video.play().catch(() => {});
+  });
+
+  // 隣接動画をプリロード
+  preloadAdjacent(index);
+}
+
+function preloadAdjacent(index) {
+  [index - 1, index + 1].forEach(i => {
+    if (i >= 0 && i < filteredVideos.length) {
+      const v = document.getElementById(`video-${i}`);
+      if (v && v.preload !== 'auto') v.preload = 'auto';
+    }
+  });
 }
 
 function buildVideoGrid() {
@@ -295,11 +358,8 @@ function onSlideChange(newIndex) {
   updateVideoGrid(newIndex);
   updateFsUI(newIndex);
 
-  // 新しいスライドの動画をプリロード
-  const video = document.getElementById(`video-${newIndex}`);
-  if (video && video.preload !== 'auto') {
-    video.preload = 'auto';
-  }
+  // 新しい動画を自動再生
+  playVideo(newIndex);
 }
 
 function goToVideo(index) {
