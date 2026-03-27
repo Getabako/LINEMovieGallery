@@ -5,11 +5,12 @@
 
 // --- カテゴリ定義 ---
 const CATEGORIES = [
-  { key: 'all',     label: 'すべて' },
-  { key: 'player',  label: '選手紹介' },
-  { key: 'action',  label: 'アクション' },
-  { key: 'story',   label: 'ストーリー' },
-  { key: 'scene',   label: 'ワンシーン' },
+  { key: 'all',      label: 'すべて' },
+  { key: 'nakayama', label: '中山拓哉' },
+  { key: 'taguchi',  label: '田口成浩' },
+  { key: 'ako',      label: '赤穂雷太' },
+  { key: 'motoda',   label: '元田大陽' },
+  { key: 'wetzell',  label: 'ヤニー・ウェッツェル' },
 ];
 
 // --- Cloud Storage ベースURL ---
@@ -21,78 +22,36 @@ const ALL_VIDEOS = [
     src: `${GCS}/01-nakayama.mp4`,
     title: '中山拓哉',
     description: '中山拓哉選手の紹介ムービー。',
-    category: 'player',
+    category: 'nakayama',
     tags: ['中山拓哉', '選手', '紹介'],
   },
   {
     src: `${GCS}/02-taguchi.mp4`,
     title: '田口成浩',
     description: '田口成浩選手の紹介ムービー。',
-    category: 'player',
+    category: 'taguchi',
     tags: ['田口成浩', '選手', '紹介'],
   },
   {
     src: `${GCS}/03-ako.mp4`,
     title: '赤穂雷太',
     description: '赤穂雷太選手の紹介ムービー。',
-    category: 'player',
+    category: 'ako',
     tags: ['赤穂雷太', '選手', '紹介'],
   },
   {
     src: `${GCS}/04-motoda.mp4`,
     title: '元田大陽',
     description: '元田大陽選手の紹介ムービー。',
-    category: 'player',
+    category: 'motoda',
     tags: ['元田大陽', '選手', '紹介'],
   },
   {
     src: `${GCS}/05-wetzell.mp4`,
     title: 'ヤニー・ウェッツェル',
     description: 'ヤニー・ウェッツェル選手の紹介ムービー。',
-    category: 'player',
+    category: 'wetzell',
     tags: ['ヤニー・ウェッツェル', '選手', '紹介'],
-  },
-  {
-    src: `${GCS}/court-invasion.mp4`,
-    title: 'バスケットボールコートでの乱入',
-    description: '試合中に予想外の乱入者が現れる衝撃のシーン。',
-    category: 'action',
-    tags: ['バスケ', '乱入', 'コート', 'アクション'],
-  },
-  {
-    src: `${GCS}/dunk-shot.mp4`,
-    title: '渾身のダンクシュート',
-    description: '圧巻のダンクシュートが炸裂する瞬間。',
-    category: 'action',
-    tags: ['バスケ', 'ダンク', 'シュート', 'アクション'],
-  },
-  {
-    src: `${GCS}/dogeza.mp4`,
-    title: '体育館での土下座',
-    description: '体育館で高校生が土下座する緊迫のシーン。',
-    category: 'story',
-    tags: ['高校生', '体育館', '土下座', 'ドラマ'],
-  },
-  {
-    src: `${GCS}/high-five.mp4`,
-    title: 'チームメイトとの和解',
-    description: 'ハイタッチで仲間との絆を確かめ合う感動の瞬間。',
-    category: 'story',
-    tags: ['チームメイト', '和解', 'ハイタッチ', '感動'],
-  },
-  {
-    src: `${GCS}/beach-walk.mp4`,
-    title: '海岸を歩く男',
-    description: '波打ち際を一人歩く男の姿。',
-    category: 'scene',
-    tags: ['海岸', '風景', 'シーン'],
-  },
-  {
-    src: `${GCS}/special.mp4`,
-    title: 'スペシャルムービー',
-    description: '特別映像をお届けします。',
-    category: 'scene',
-    tags: ['スペシャル', '特別'],
   },
 ];
 
