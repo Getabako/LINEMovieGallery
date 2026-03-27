@@ -1,75 +1,59 @@
 /* ============================================
-   秋田ノーザンハピネッツ MOVIE GALLERY
+   MOVIE GALLERY
    LINE LIFF App - Main Application
    ============================================ */
 
 // --- カテゴリ定義 ---
 const CATEGORIES = [
-  { key: 'all',       label: 'すべて' },
-  { key: 'highlight', label: '試合ハイライト' },
-  { key: 'interview', label: '選手インタビュー' },
-  { key: 'message',   label: '選手メッセージ' },
-  { key: 'cheer',     label: 'チア・イベント' },
-  { key: 'behind',    label: '舞台裏' },
+  { key: 'all',    label: 'すべて' },
+  { key: 'action', label: 'アクション' },
+  { key: 'story',  label: 'ストーリー' },
+  { key: 'scene',  label: 'ワンシーン' },
 ];
 
 // --- 動画データ ---
 const ALL_VIDEOS = [
   {
-    id: '4DzlWiyNPJU',
-    title: '秋田ノーザンハピネッツ 試合ハイライト vs アルバルク東京',
-    description: 'B.LEAGUE 2024-25シーズン 注目の一戦をハイライトでお届け。',
-    category: 'highlight',
-    tags: ['試合', 'ハイライト', 'アルバルク', 'Bリーグ'],
+    src: 'movies/バスケットボールコートでの乱入.mp4',
+    title: 'バスケットボールコートでの乱入',
+    description: '試合中に予想外の乱入者が現れる衝撃のシーン。',
+    category: 'action',
+    tags: ['バスケ', '乱入', 'コート', 'アクション'],
   },
   {
-    id: 'hjX5rhceKpA',
-    title: '【選手インタビュー】シーズンを振り返って',
-    description: '主力選手がシーズンの手応えと課題を語る。',
-    category: 'interview',
-    tags: ['選手', 'インタビュー', 'シーズン'],
+    src: 'movies/ダンクシュート動画生成.mp4',
+    title: '渾身のダンクシュート',
+    description: '圧巻のダンクシュートが炸裂する瞬間。',
+    category: 'action',
+    tags: ['バスケ', 'ダンク', 'シュート', 'アクション'],
   },
   {
-    id: 'D2nR0NFsgbo',
-    title: '選手からファンへのメッセージ 2025',
-    description: 'いつも応援ありがとう！選手たちからファンの皆様へ感謝のメッセージ。',
-    category: 'message',
-    tags: ['選手', 'メッセージ', 'ファン', '感謝'],
+    src: 'movies/高校生、体育館で土下座.mp4',
+    title: '体育館での土下座',
+    description: '体育館で高校生が土下座する緊迫のシーン。',
+    category: 'story',
+    tags: ['高校生', '体育館', '土下座', 'ドラマ'],
   },
   {
-    id: '4DzlWiyNPJU',
-    title: '秋田ノーザンハピネッツ 試合ハイライト vs 千葉ジェッツ',
-    description: 'ホームゲームの熱い戦いをダイジェストで。',
-    category: 'highlight',
-    tags: ['試合', 'ハイライト', '千葉ジェッツ', 'ホーム'],
+    src: 'movies/チームメイトとの和解ハイタッチ.mp4',
+    title: 'チームメイトとの和解',
+    description: 'ハイタッチで仲間との絆を確かめ合う感動の瞬間。',
+    category: 'story',
+    tags: ['チームメイト', '和解', 'ハイタッチ', '感動'],
   },
   {
-    id: 'hjX5rhceKpA',
-    title: 'ハピネッツチアリーダーズ パフォーマンス集',
-    description: 'ハーフタイムを盛り上げるチアリーダーズの最高のパフォーマンス。',
-    category: 'cheer',
-    tags: ['チア', 'チアリーダーズ', 'パフォーマンス', 'ハーフタイム'],
+    src: 'movies/海岸を歩く男性の動画.mp4',
+    title: '海岸を歩く男',
+    description: '波打ち際を一人歩く男の姿。',
+    category: 'scene',
+    tags: ['海岸', '風景', 'シーン'],
   },
   {
-    id: 'D2nR0NFsgbo',
-    title: '【密着】試合当日の舞台裏に潜入！',
-    description: 'CNAアリーナの裏側をお見せします。選手の準備から試合直前の緊張感まで。',
-    category: 'behind',
-    tags: ['舞台裏', '密着', 'アリーナ', '裏側'],
-  },
-  {
-    id: '4DzlWiyNPJU',
-    title: 'キャプテンからの開幕メッセージ',
-    description: '新シーズン開幕に向けたキャプテンの意気込み。',
-    category: 'message',
-    tags: ['キャプテン', 'メッセージ', '開幕', 'シーズン'],
-  },
-  {
-    id: 'hjX5rhceKpA',
-    title: 'ファン感謝祭 2025 ダイジェスト',
-    description: 'ファンとの交流イベントの模様をお届け。',
-    category: 'cheer',
-    tags: ['ファン', '感謝祭', 'イベント', '交流'],
+    src: 'movies/c03f0813-cf0e-4234-8c04-0628028cdc18.mp4',
+    title: 'スペシャルムービー',
+    description: '特別映像をお届けします。',
+    category: 'scene',
+    tags: ['スペシャル', '特別'],
   },
 ];
 
@@ -78,14 +62,12 @@ const LIFF_ID = '2009109071-mxy5adpB';
 
 // --- グローバル変数 ---
 let swiper = null;
-let players = {};
 let currentSlideIndex = 0;
 let filteredVideos = [...ALL_VIDEOS];
 let activeCategory = 'all';
 let searchQuery = '';
-let isFullscreenMode = false; // 全画面モード（横画面 or 手動フルスクリーン）
+let isFullscreenMode = false;
 let overlayTimer = null;
-let ytApiReady = false;
 let appInitialized = false;
 let searchDebounceTimer = null;
 let liffAvailable = false;
@@ -93,37 +75,6 @@ let liffAvailable = false;
 // ============================================
 // 初期化
 // ============================================
-
-window.onYouTubeIframeAPIReady = function () {
-  ytApiReady = true;
-  if (appInitialized && filteredVideos.length > 0) {
-    createPlayerForSlide(0);
-  }
-};
-
-function loadYouTubeAPI() {
-  return new Promise((resolve) => {
-    if (window.YT && window.YT.Player) { ytApiReady = true; resolve(); return; }
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const timeout = setTimeout(() => { resolve(); }, 8000);
-    const orig = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = function () {
-      clearTimeout(timeout); ytApiReady = true; if (orig) orig(); resolve();
-    };
-    tag.onerror = () => { clearTimeout(timeout); resolve(); };
-    document.head.appendChild(tag);
-  });
-}
-
-async function initLIFF() {
-  if (!LIFF_ID || window.__liffLoadFailed || typeof liff === 'undefined') return;
-  try { await liff.init({ liffId: LIFF_ID }); liffAvailable = true; } catch (e) { console.warn('LIFF:', e); }
-}
-
-function isInLineClient() {
-  try { return liffAvailable && liff.isInClient(); } catch (e) { return false; }
-}
 
 document.addEventListener('DOMContentLoaded', initApp);
 
@@ -135,8 +86,11 @@ async function initApp() {
   setupFullscreenHandler();
   setupFsControls();
   appInitialized = true;
-  await loadYouTubeAPI();
-  if (ytApiReady && filteredVideos.length > 0) createPlayerForSlide(0);
+}
+
+async function initLIFF() {
+  if (!LIFF_ID || window.__liffLoadFailed || typeof liff === 'undefined') return;
+  try { await liff.init({ liffId: LIFF_ID }); liffAvailable = true; } catch (e) { console.warn('LIFF:', e); }
 }
 
 // ============================================
@@ -167,16 +121,13 @@ function setupSearch() {
   const clearBtn = document.getElementById('searchClear');
   const resetBtn = document.getElementById('resetFilterBtn');
 
-  // フォーカス時: スクロールを固定してキーボードによるレイアウト崩れを防止
   input.addEventListener('focus', () => {
     document.getElementById('mainContent').style.overflow = 'hidden';
-    // iOSでfocusが外れないよう少し遅延してスクロール位置を固定
     setTimeout(() => window.scrollTo(0, 0), 50);
   });
   input.addEventListener('blur', () => {
     document.getElementById('mainContent').style.overflow = '';
   });
-  // タッチイベントの伝播を止めて他の要素にフォーカスが奪われないように
   input.addEventListener('touchstart', (e) => { e.stopPropagation(); });
 
   input.addEventListener('input', () => {
@@ -196,7 +147,9 @@ function setupSearch() {
 }
 
 function applyFilter() {
-  destroyAllPlayers();
+  // 現在の動画をすべて停止
+  filteredVideos.forEach((_, i) => pausePlayer(i));
+
   filteredVideos = ALL_VIDEOS.filter(video => {
     const matchCat = activeCategory === 'all' || video.category === activeCategory;
     if (!matchCat) return false;
@@ -225,7 +178,6 @@ function applyFilter() {
     initSwiper();
     updateVideoInfo(0);
     updateDots(0);
-    if (ytApiReady) createPlayerForSlide(0);
   }
 }
 
@@ -238,17 +190,35 @@ function buildSwiperSlides() {
   wrapper.innerHTML = filteredVideos.map((video, i) => `
     <div class="swiper-slide" data-index="${i}">
       <div class="video-frame-wrapper" id="playerWrapper-${i}">
-        <div class="video-thumbnail-slide" id="thumbnail-${i}">
-          <img src="https://img.youtube.com/vi/${video.id}/hqdefault.jpg" alt="${video.title}">
-          <div class="thumbnail-play-icon"></div>
-        </div>
+        <video
+          class="slide-video"
+          id="video-${i}"
+          preload="${i === 0 ? 'auto' : 'metadata'}"
+          playsinline
+          webkit-playsinline
+          src="${video.src}"
+        ></video>
         <div class="touch-overlay" data-index="${i}">
           <div class="tap-to-play" id="tapIcon-${i}"></div>
         </div>
       </div>
     </div>
   `).join('');
+
+  // タッチオーバーレイ設定
   document.querySelectorAll('.touch-overlay').forEach(setupTouchOverlay);
+
+  // 動画終了時の自動遷移
+  filteredVideos.forEach((_, i) => {
+    const video = document.getElementById(`video-${i}`);
+    if (video) {
+      video.addEventListener('ended', () => {
+        if (currentSlideIndex === i && i < filteredVideos.length - 1) {
+          goToVideo(i + 1);
+        }
+      });
+    }
+  });
 }
 
 function setupTouchOverlay(overlay) {
@@ -270,19 +240,19 @@ function setupTouchOverlay(overlay) {
 }
 
 function togglePlayPause(index) {
-  const player = players[index];
-  if (!player) { createPlayerForSlide(index); return; }
-  try {
-    const state = player.getPlayerState();
-    const icon = document.getElementById(`tapIcon-${index}`);
-    if (state === YT.PlayerState.PLAYING) {
-      player.pauseVideo();
-      if (icon) { icon.classList.add('paused', 'show'); setTimeout(() => icon.classList.remove('show'), 800); }
-    } else {
-      player.playVideo();
-      if (icon) { icon.classList.remove('paused'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 800); }
-    }
-  } catch (e) { createPlayerForSlide(index); }
+  const video = document.getElementById(`video-${index}`);
+  if (!video) return;
+  const icon = document.getElementById(`tapIcon-${index}`);
+
+  if (video.paused) {
+    // 他の動画を停止
+    filteredVideos.forEach((_, i) => { if (i !== index) pausePlayer(i); });
+    video.play().catch(() => {});
+    if (icon) { icon.classList.remove('paused'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 800); }
+  } else {
+    video.pause();
+    if (icon) { icon.classList.add('paused', 'show'); setTimeout(() => icon.classList.remove('show'), 800); }
+  }
 }
 
 function buildVideoGrid() {
@@ -292,13 +262,12 @@ function buildVideoGrid() {
     return `
       <div class="video-card ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="goToVideo(${i})">
         <div class="card-thumbnail">
-          <img src="https://img.youtube.com/vi/${video.id}/mqdefault.jpg" alt="${video.title}">
+          <video preload="metadata" muted playsinline src="${video.src}#t=0.5"></video>
           <span class="card-category-badge">${catLabel}</span>
           ${i === 0 ? '<span class="card-now-playing">再生中</span>' : ''}
         </div>
         <div class="card-info">
           <div class="card-title">${video.title}</div>
-          <div class="card-meta">秋田ノーザンハピネッツ</div>
         </div>
       </div>`;
   }).join('');
@@ -325,63 +294,21 @@ function onSlideChange(newIndex) {
   updateDots(newIndex);
   updateVideoGrid(newIndex);
   updateFsUI(newIndex);
-  createPlayerForSlide(newIndex);
+
+  // 新しいスライドの動画をプリロード
+  const video = document.getElementById(`video-${newIndex}`);
+  if (video && video.preload !== 'auto') {
+    video.preload = 'auto';
+  }
 }
 
 function goToVideo(index) {
   if (swiper) swiper.slideTo(index);
 }
 
-function createPlayerForSlide(index) {
-  if (!ytApiReady || !window.YT || !window.YT.Player) return;
-  if (index >= filteredVideos.length) return;
-  const video = filteredVideos[index];
-  const wrapper = document.getElementById(`playerWrapper-${index}`);
-  if (!wrapper) return;
-
-  if (players[index]) {
-    try { players[index].playVideo(); } catch (e) { rebuildPlayer(index); }
-    return;
-  }
-
-  const thumb = document.getElementById(`thumbnail-${index}`);
-  if (thumb) thumb.style.display = 'none';
-
-  const div = document.createElement('div');
-  div.id = `ytplayer-${index}`;
-  wrapper.appendChild(div);
-
-  try {
-    players[index] = new YT.Player(`ytplayer-${index}`, {
-      videoId: video.id,
-      playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, controls: 1, fs: 0 },
-      events: {
-        onReady: (e) => { try { e.target.playVideo(); } catch (err) {} },
-        onError: (e) => { console.warn('YT error:', e.data); },
-        onStateChange: (e) => {
-          if (e.data === YT.PlayerState.ENDED && currentSlideIndex < filteredVideos.length - 1) {
-            goToVideo(currentSlideIndex + 1);
-          }
-        },
-      },
-    });
-  } catch (e) { console.warn('YT player create failed:', e); }
-}
-
-function rebuildPlayer(index) {
-  if (players[index]) { try { players[index].destroy(); } catch (e) {} delete players[index]; }
-  const old = document.getElementById(`ytplayer-${index}`);
-  if (old) old.remove();
-  createPlayerForSlide(index);
-}
-
 function pausePlayer(index) {
-  if (players[index]) { try { players[index].pauseVideo(); } catch (e) {} }
-}
-
-function destroyAllPlayers() {
-  Object.keys(players).forEach(k => { try { players[k].destroy(); } catch (e) {} });
-  players = {};
+  const video = document.getElementById(`video-${index}`);
+  if (video) { try { video.pause(); } catch (e) {} }
 }
 
 // ============================================
@@ -417,60 +344,22 @@ function updateVideoGrid(index) {
 }
 
 // ============================================
-// フルスクリーン（横画面自動 + ボタン手動）
+// フルスクリーン（縦画面対応）
 // ============================================
 
-function isLandscape() {
-  // screen.orientation API（キーボード表示に影響されない）
-  if (screen.orientation && screen.orientation.type) {
-    return screen.orientation.type.startsWith('landscape');
-  }
-  // screen寸法（キーボードで変わらない。matchMediaは使わない=キーボードで誤判定するため）
-  return (screen.width || window.innerWidth) > (screen.height || window.innerHeight);
-}
-
 function setupFullscreenHandler() {
-  // 画面回転検知（キーボード表示ではなく実際の回転のみ検知）
-  let lastOrientation = isLandscape();
-
-  const checkOrientation = () => {
-    const landscape = isLandscape();
-    // 実際に方向が変わった場合のみ処理
-    if (landscape === lastOrientation) return;
-    lastOrientation = landscape;
-
-    if (landscape && !isFullscreenMode) {
-      document.body.classList.add('landscape-mode');
-      enterFullscreenMode(true);
-    } else if (!landscape && isFullscreenMode) {
-      document.body.classList.remove('landscape-mode');
-      exitFullscreenMode();
-    }
-  };
-
-  // 画面回転イベントのみ使用（resizeは使わない＝キーボードで誤発火するため）
-  if (screen.orientation) {
-    screen.orientation.addEventListener('change', () => setTimeout(checkOrientation, 100));
-  }
-  window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 200));
-  // 初回チェック
-  checkOrientation();
-
-  // 全画面ボタン（縦画面で押す）
   const fsBtn = document.getElementById('fullscreenBtn');
   fsBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    enterFullscreenMode(false);
+    enterFullscreenMode();
   });
-  // タッチイベントも追加（LINE内ブラウザ対応）
   fsBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    enterFullscreenMode(false);
+    enterFullscreenMode();
   });
 
-  // Fullscreen API の状態変化を監視
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }
@@ -478,72 +367,38 @@ function setupFullscreenHandler() {
 function onFullscreenChange() {
   const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
   if (!fsEl && isFullscreenMode) {
-    // ブラウザ側でフルスクリーンが解除された
     isFullscreenMode = false;
-    document.body.classList.remove('fs-active', 'landscape-mode', 'fs-rotate');
+    document.body.classList.remove('fs-active');
     document.getElementById('fsOverlay').classList.remove('visible');
     clearTimeout(overlayTimer);
-    // Swiperリサイズ
     setTimeout(() => { if (swiper) swiper.update(); }, 100);
   }
 }
 
-function enterFullscreenMode(isAutoLandscape) {
+function enterFullscreenMode() {
   isFullscreenMode = true;
   document.body.classList.add('fs-active');
   updateFsUI(currentSlideIndex);
 
   const container = document.getElementById('fullscreenContainer');
+  requestFS(container);
 
-  if (!isAutoLandscape) {
-    // 手動ボタン: まずネイティブAPI試行、ダメならCSS回転フォールバック
-    const alreadyLandscape = isLandscape();
-    if (alreadyLandscape) {
-      // すでに横画面ならそのままFullscreen API
-      document.body.classList.add('landscape-mode');
-      requestFS(container);
-    } else {
-      // 縦画面から: ネイティブ横向きロックを試行
-      requestFS(container).then(() => {
-        return tryLockLandscape();
-      }).then((locked) => {
-        if (!locked) {
-          // ネイティブロック失敗 → CSS回転で強制横向き
-          document.body.classList.add('fs-rotate');
-        }
-        setTimeout(() => { if (swiper) swiper.update(); }, 200);
-      });
-    }
-  } else {
-    // 横画面自動: Fullscreen APIを試行
-    document.body.classList.add('landscape-mode');
-    requestFS(container);
-  }
-
-  // オーバーレイ表示
   document.getElementById('fsOverlay').classList.add('visible');
   resetOverlayTimer();
 
-  // Swiperリサイズ（段階的にリトライ）
   setTimeout(() => { if (swiper) swiper.update(); }, 150);
   setTimeout(() => { if (swiper) swiper.update(); }, 500);
 }
 
 function exitFullscreenMode() {
   isFullscreenMode = false;
-  document.body.classList.remove('fs-active', 'landscape-mode', 'fs-rotate');
+  document.body.classList.remove('fs-active');
   document.getElementById('fsOverlay').classList.remove('visible');
   clearTimeout(overlayTimer);
-
-  // Fullscreen API解除
   exitFS();
-  // 画面ロック解除
-  tryUnlockOrientation();
-
   setTimeout(() => { if (swiper) swiper.update(); }, 100);
 }
 
-// --- Fullscreen API ヘルパー ---
 function requestFS(el) {
   try {
     if (el.requestFullscreen) return el.requestFullscreen().catch(() => {});
@@ -562,23 +417,6 @@ function exitFS() {
   } catch (e) {}
 }
 
-function tryLockLandscape() {
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      return screen.orientation.lock('landscape').then(() => true).catch(() => false);
-    }
-  } catch (e) {}
-  return Promise.resolve(false);
-}
-
-function tryUnlockOrientation() {
-  try {
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock();
-    }
-  } catch (e) {}
-}
-
 // ============================================
 // フルスクリーン UI コントロール
 // ============================================
@@ -593,20 +431,17 @@ function updateFsUI(index) {
 }
 
 function setupFsControls() {
-  // 閉じるボタン → フルスクリーン解除
   document.getElementById('fsBackBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     exitFullscreenMode();
   });
 
-  // 前の動画
   document.getElementById('fsPrevBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     if (currentSlideIndex > 0) goToVideo(currentSlideIndex - 1);
     resetOverlayTimer();
   });
 
-  // 次の動画
   document.getElementById('fsNextBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     if (currentSlideIndex < filteredVideos.length - 1) goToVideo(currentSlideIndex + 1);

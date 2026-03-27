@@ -232,7 +232,7 @@ body {
 
 .player-swiper {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 60vh;
 }
 
 .player-swiper .swiper-slide {
@@ -250,13 +250,14 @@ body {
   height: 100%;
 }
 
-.video-frame-wrapper iframe {
+.video-frame-wrapper video {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  border: none;
+  object-fit: contain;
+  background: #000;
 }
 
 /* タッチオーバーレイ */
@@ -365,8 +366,7 @@ body {
   transition: opacity 0.3s;
 }
 
-body.fs-active .mascot-bikky,
-body.landscape-mode .mascot-bikky {
+body.fs-active .mascot-bikky {
   display: none;
 }
 
@@ -633,14 +633,14 @@ body.landscape-mode .mascot-bikky {
 .card-thumbnail {
   position: relative;
   flex-shrink: 0;
-  width: 160px;
-  aspect-ratio: 16 / 9;
+  width: 72px;
+  aspect-ratio: 9 / 16;
   border-radius: 6px;
   overflow: hidden;
   background: #222;
 }
 
-.card-thumbnail img {
+.card-thumbnail video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -779,63 +779,6 @@ body.fs-active .video-list {
   display: none !important;
 }
 
-/* ============================================
-   CSS回転による強制横向きフルスクリーン
-   （自動回転オフ + ネイティブAPI非対応時のフォールバック）
-   body.fs-rotate が付くとコンテナを90度回転
-   ============================================ */
-
-body.fs-rotate .fullscreen-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  /* 幅と高さを入れ替え: width=画面高さ, height=画面幅 */
-  width: 100vh;
-  width: 100dvh;
-  height: 100vw;
-  /* 中心に置いてから回転 → 中心が動かないので確実に画面を覆う */
-  transform: translate(-50%, -50%) rotate(90deg);
-  z-index: 9999;
-  background: #000;
-}
-
-body.fs-rotate .player-section {
-  width: 100%;
-  height: 100%;
-}
-
-body.fs-rotate .player-swiper {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
-}
-
-body.fs-rotate .player-swiper .swiper-wrapper {
-  height: 100% !important;
-}
-
-body.fs-rotate .player-swiper .swiper-slide {
-  height: 100% !important;
-}
-
-body.fs-rotate .video-frame-wrapper {
-  width: 100%;
-  height: 100%;
-}
-
-body.fs-rotate .video-frame-wrapper iframe {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-body.fs-rotate .fs-overlay {
-  display: block;
-}
-
-body.fs-rotate .mascot-bikky {
-  display: none;
-}
-
 /* Fullscreen API でフルスクリーンになった場合 */
 .fullscreen-container:fullscreen {
   width: 100vw;
@@ -904,74 +847,6 @@ body.fs-rotate .mascot-bikky {
 
 .fullscreen-container:-webkit-full-screen .fs-overlay {
   display: block;
-}
-
-/* ============================================
-   横画面モード（JSでbody.landscape-modeクラス付与）
-   ※ @media (orientation: landscape) は使わない
-   ※ キーボード表示時に誤判定するため
-   ============================================ */
-
-body.landscape-mode .app-header {
-  display: none !important;
-}
-
-body.landscape-mode .main-content {
-  overflow: hidden !important;
-}
-
-body.landscape-mode .fullscreen-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  z-index: 9000;
-  background: #000;
-}
-
-body.landscape-mode .player-section {
-  width: 100%;
-  height: 100%;
-}
-
-body.landscape-mode .player-swiper {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
-}
-
-body.landscape-mode .player-swiper .swiper-wrapper {
-  height: 100% !important;
-}
-
-body.landscape-mode .player-swiper .swiper-slide {
-  height: 100% !important;
-}
-
-body.landscape-mode .video-frame-wrapper {
-  width: 100%;
-  height: 100%;
-}
-
-body.landscape-mode .video-frame-wrapper iframe {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-body.landscape-mode .fs-overlay {
-  display: block;
-}
-
-body.landscape-mode .player-bar,
-body.landscape-mode .video-info,
-body.landscape-mode .video-list {
-  display: none !important;
-}
-
-body.landscape-mode .mascot-bikky {
-  display: none;
 }
 
 /* ============================================
