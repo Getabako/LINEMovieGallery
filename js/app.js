@@ -12,9 +12,9 @@ const CATEGORIES = [
   { key: 'scene',   label: 'ワンシーン' },
 ];
 
-// --- Firebase Storage ベースURL ---
-const STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0306469427.firebasestorage.app/o';
-const media = (path) => `${STORAGE_BASE}/${encodeURIComponent(path)}?alt=media`;
+// --- Cloud Storage ベースURL ---
+const STORAGE_BUCKET = 'gen-lang-client-0306469427.firebasestorage.app';
+const media = (filePath) => `https://storage.googleapis.com/${STORAGE_BUCKET}/${filePath.split('/').map(s => encodeURIComponent(s)).join('/')}`;
 
 // --- 動画データ ---
 const ALL_VIDEOS = [
