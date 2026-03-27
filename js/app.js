@@ -12,80 +12,84 @@ const CATEGORIES = [
   { key: 'scene',   label: 'ワンシーン' },
 ];
 
+// --- Firebase Storage ベースURL ---
+const STORAGE_BASE = 'https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0306469427.firebasestorage.app/o';
+const media = (path) => `${STORAGE_BASE}/${encodeURIComponent(path)}?alt=media`;
+
 // --- 動画データ ---
 const ALL_VIDEOS = [
   {
-    src: 'movies/1 中山拓哉 ドラフト01.mp4',
+    src: media('movies/1 中山拓哉 ドラフト01.mp4'),
     title: '中山拓哉',
     description: '中山拓哉選手の紹介ムービー。',
     category: 'player',
     tags: ['中山拓哉', '選手', '紹介'],
   },
   {
-    src: 'movies/2 田口成浩 ドラフト02.mp4',
+    src: media('movies/2 田口成浩 ドラフト02.mp4'),
     title: '田口成浩',
     description: '田口成浩選手の紹介ムービー。',
     category: 'player',
     tags: ['田口成浩', '選手', '紹介'],
   },
   {
-    src: 'movies/3 赤穂雷太 ドラフト01.mp4',
+    src: media('movies/3 赤穂雷太 ドラフト01.mp4'),
     title: '赤穂雷太',
     description: '赤穂雷太選手の紹介ムービー。',
     category: 'player',
     tags: ['赤穂雷太', '選手', '紹介'],
   },
   {
-    src: 'movies/4 元田大陽 ドラフト01.mp4',
+    src: media('movies/4 元田大陽 ドラフト01.mp4'),
     title: '元田大陽',
     description: '元田大陽選手の紹介ムービー。',
     category: 'player',
     tags: ['元田大陽', '選手', '紹介'],
   },
   {
-    src: 'movies/5 ヤニー・ウェッツェル ドラフト01.mp4',
+    src: media('movies/5 ヤニー・ウェッツェル ドラフト01.mp4'),
     title: 'ヤニー・ウェッツェル',
     description: 'ヤニー・ウェッツェル選手の紹介ムービー。',
     category: 'player',
     tags: ['ヤニー・ウェッツェル', '選手', '紹介'],
   },
   {
-    src: 'movies/バスケットボールコートでの乱入.mp4',
+    src: media('movies/バスケットボールコートでの乱入.mp4'),
     title: 'バスケットボールコートでの乱入',
     description: '試合中に予想外の乱入者が現れる衝撃のシーン。',
     category: 'action',
     tags: ['バスケ', '乱入', 'コート', 'アクション'],
   },
   {
-    src: 'movies/ダンクシュート動画生成.mp4',
+    src: media('movies/ダンクシュート動画生成.mp4'),
     title: '渾身のダンクシュート',
     description: '圧巻のダンクシュートが炸裂する瞬間。',
     category: 'action',
     tags: ['バスケ', 'ダンク', 'シュート', 'アクション'],
   },
   {
-    src: 'movies/高校生、体育館で土下座.mp4',
+    src: media('movies/高校生、体育館で土下座.mp4'),
     title: '体育館での土下座',
     description: '体育館で高校生が土下座する緊迫のシーン。',
     category: 'story',
     tags: ['高校生', '体育館', '土下座', 'ドラマ'],
   },
   {
-    src: 'movies/チームメイトとの和解ハイタッチ.mp4',
+    src: media('movies/チームメイトとの和解ハイタッチ.mp4'),
     title: 'チームメイトとの和解',
     description: 'ハイタッチで仲間との絆を確かめ合う感動の瞬間。',
     category: 'story',
     tags: ['チームメイト', '和解', 'ハイタッチ', '感動'],
   },
   {
-    src: 'movies/海岸を歩く男性の動画.mp4',
+    src: media('movies/海岸を歩く男性の動画.mp4'),
     title: '海岸を歩く男',
     description: '波打ち際を一人歩く男の姿。',
     category: 'scene',
     tags: ['海岸', '風景', 'シーン'],
   },
   {
-    src: 'movies/c03f0813-cf0e-4234-8c04-0628028cdc18.mp4',
+    src: media('movies/c03f0813-cf0e-4234-8c04-0628028cdc18.mp4'),
     title: 'スペシャルムービー',
     description: '特別映像をお届けします。',
     category: 'scene',
