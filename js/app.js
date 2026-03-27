@@ -5,14 +5,50 @@
 
 // --- カテゴリ定義 ---
 const CATEGORIES = [
-  { key: 'all',    label: 'すべて' },
-  { key: 'action', label: 'アクション' },
-  { key: 'story',  label: 'ストーリー' },
-  { key: 'scene',  label: 'ワンシーン' },
+  { key: 'all',     label: 'すべて' },
+  { key: 'player',  label: '選手紹介' },
+  { key: 'action',  label: 'アクション' },
+  { key: 'story',   label: 'ストーリー' },
+  { key: 'scene',   label: 'ワンシーン' },
 ];
 
 // --- 動画データ ---
 const ALL_VIDEOS = [
+  {
+    src: 'movies/1 中山拓哉 ドラフト01.mp4',
+    title: '中山拓哉',
+    description: '中山拓哉選手の紹介ムービー。',
+    category: 'player',
+    tags: ['中山拓哉', '選手', '紹介'],
+  },
+  {
+    src: 'movies/2 田口成浩 ドラフト02.mp4',
+    title: '田口成浩',
+    description: '田口成浩選手の紹介ムービー。',
+    category: 'player',
+    tags: ['田口成浩', '選手', '紹介'],
+  },
+  {
+    src: 'movies/3 赤穂雷太 ドラフト01.mp4',
+    title: '赤穂雷太',
+    description: '赤穂雷太選手の紹介ムービー。',
+    category: 'player',
+    tags: ['赤穂雷太', '選手', '紹介'],
+  },
+  {
+    src: 'movies/4 元田大陽 ドラフト01.mp4',
+    title: '元田大陽',
+    description: '元田大陽選手の紹介ムービー。',
+    category: 'player',
+    tags: ['元田大陽', '選手', '紹介'],
+  },
+  {
+    src: 'movies/5 ヤニー・ウェッツェル ドラフト01.mp4',
+    title: 'ヤニー・ウェッツェル',
+    description: 'ヤニー・ウェッツェル選手の紹介ムービー。',
+    category: 'player',
+    tags: ['ヤニー・ウェッツェル', '選手', '紹介'],
+  },
   {
     src: 'movies/バスケットボールコートでの乱入.mp4',
     title: 'バスケットボールコートでの乱入',
