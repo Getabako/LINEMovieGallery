@@ -20,36 +20,31 @@ const GCS = 'https://storage.googleapis.com/gen-lang-client-0306469427.firebases
 const ALL_VIDEOS = [
   {
     src: `${GCS}/01-nakayama.mp4`,
-    title: '中山拓哉',
-    description: '中山拓哉選手の紹介ムービー。',
+    title: '動画タイトル',
     category: 'nakayama',
     tags: ['中山拓哉', '選手', '紹介'],
   },
   {
     src: `${GCS}/02-taguchi.mp4`,
-    title: '田口成浩',
-    description: '田口成浩選手の紹介ムービー。',
+    title: '動画タイトル',
     category: 'taguchi',
     tags: ['田口成浩', '選手', '紹介'],
   },
   {
     src: `${GCS}/03-ako.mp4`,
-    title: '赤穂雷太',
-    description: '赤穂雷太選手の紹介ムービー。',
+    title: '動画タイトル',
     category: 'ako',
     tags: ['赤穂雷太', '選手', '紹介'],
   },
   {
     src: `${GCS}/04-motoda.mp4`,
-    title: '元田大陽',
-    description: '元田大陽選手の紹介ムービー。',
+    title: '動画タイトル',
     category: 'motoda',
     tags: ['元田大陽', '選手', '紹介'],
   },
   {
     src: `${GCS}/05-wetzell.mp4`,
-    title: 'ヤニー・ウェッツェル',
-    description: 'ヤニー・ウェッツェル選手の紹介ムービー。',
+    title: '動画タイトル',
     category: 'wetzell',
     tags: ['ヤニー・ウェッツェル', '選手', '紹介'],
   },
@@ -170,7 +165,6 @@ function applyFilter() {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return video.title.toLowerCase().includes(q) ||
-           video.description.toLowerCase().includes(q) ||
            video.tags.some(tag => tag.toLowerCase().includes(q));
   });
   currentSlideIndex = 0;
@@ -379,7 +373,6 @@ function updateVideoInfo(index) {
   const catLabel = CATEGORIES.find(c => c.key === video.category)?.label || '';
   document.getElementById('videoCategory').textContent = catLabel;
   document.getElementById('videoTitle').textContent = video.title;
-  document.getElementById('videoDescription').textContent = video.description;
 }
 
 function updateDots(index) {
