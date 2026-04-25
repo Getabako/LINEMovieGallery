@@ -20,31 +20,31 @@ const GCS = 'https://storage.googleapis.com/gen-lang-client-0306469427.firebases
 const ALL_VIDEOS = [
   {
     src: `${GCS}/01-nakayama.mp4`,
-    title: '動画タイトル',
+    title: '秋田の心臓',
     category: 'nakayama',
     tags: ['中山拓哉', '選手', '紹介'],
   },
   {
     src: `${GCS}/02-taguchi.mp4`,
-    title: '動画タイトル',
+    title: '何度でも',
     category: 'taguchi',
     tags: ['田口成浩', '選手', '紹介'],
   },
   {
     src: `${GCS}/03-ako.mp4`,
-    title: '動画タイトル',
+    title: '双子の誓い',
     category: 'ako',
     tags: ['赤穂雷太', '選手', '紹介'],
   },
   {
     src: `${GCS}/04-motoda.mp4`,
-    title: '動画タイトル',
+    title: '秋田を照らす光',
     category: 'motoda',
     tags: ['元田大陽', '選手', '紹介'],
   },
   {
     src: `${GCS}/05-wetzell.mp4`,
-    title: '動画タイトル',
+    title: '世界が秋田へ',
     category: 'wetzell',
     tags: ['ヤニー・ウェッツェル', '選手', '紹介'],
   },
