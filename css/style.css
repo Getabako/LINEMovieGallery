@@ -874,3 +874,44 @@ body.fs-active .video-list {
 .main-content::-webkit-scrollbar { width: 3px; }
 .main-content::-webkit-scrollbar-track { background: transparent; }
 .main-content::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ============================================
+   フッター（プラポリ・利用規約）
+   ============================================ */
+
+.app-footer {
+  padding: 24px 16px calc(28px + var(--safe-bottom));
+  text-align: center;
+  border-top: 1px solid #222;
+  background: var(--bg-dark);
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.footer-link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-link:active { color: var(--text-primary); }
+
+.footer-sep { color: var(--text-muted); font-size: 12px; }
+
+.footer-credit {
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}

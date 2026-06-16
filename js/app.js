@@ -83,7 +83,28 @@ async function initApp() {
   setupFullscreenHandler();
   setupFsControls();
   setupUserInteraction();
+  setupFooterLinks();
   appInitialized = true;
+}
+
+// フッターのプラポリ・利用規約リンク（外部リダイレクトを避け、LINE内ブラウザ/別タブで開く）
+function setupFooterLinks() {
+  const urls = {
+    privacy: 'https://northern-happinets.com/privacy/',
+    terms: 'https://northern-happinets.com/rule/',
+  };
+  document.querySelectorAll('.footer-link').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const url = urls[btn.dataset.doc];
+      if (!url) return;
+      // LIFF環境では liff.openWindow(external:false) でLINE内ブラウザ表示（ミニアプリから離脱しない）
+      if (liffAvailable && typeof liff !== 'undefined' && liff.openWindow) {
+        try { liff.openWindow({ url, external: false }); return; } catch (e) {}
+      }
+      // 通常ブラウザ用フォールバック
+      window.open(url, '_blank', 'noopener');
+    });
+  });
 }
 
 async function initLIFF() {
