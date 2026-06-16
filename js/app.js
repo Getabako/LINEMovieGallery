@@ -51,7 +51,10 @@ const ALL_VIDEOS = [
 ];
 
 // --- LIFF設定 ---
-const LIFF_ID = '2009109071-mxy5adpB';
+// LINEミニアプリ「秋田ノーザンハピネッツムービーギャラリー」(チャネルID 2010396423/424/425)
+// 本番用LIFF ID。審査用=2010396424-Av90g8QM / 開発用=2010396423-zGJ2UPZy
+// ※liff.initはtry/catchで握りつぶしており、IDが環境と不一致でもアプリ表示には影響しない
+const LIFF_ID = '2010396425-XujEMnaL';
 
 // --- グローバル変数 ---
 let swiper = null;

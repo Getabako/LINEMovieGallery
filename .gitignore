@@ -70,6 +70,10 @@ movies/
 
 # Upload script
 upload-to-firebase.js
+upload-replacements.js
+
+# 社外秘の申請情報まとめ（代表者名・住所・電話番号・社内メモを含むため公開リポジトリに含めない）
+LINE入力情報.md
 
 # dataconnect generated files
 .dataconnect
