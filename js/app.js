@@ -85,7 +85,63 @@ async function initApp() {
   setupFsControls();
   setupUserInteraction();
   setupFooterLinks();
+  setupMiniAppActions();
   appInitialized = true;
+}
+
+// ============================================
+// LINEミニアプリ機能（認証済ミニアプリ向け）
+// - ホーム画面に追加: liff.createShortcutOnHomeScreen（認証済のみ・LIFF v2.23.0+）
+// - 友だちに送る: liff.shareTargetPicker（コンソールでシェアターゲットピッカーON が必要）
+// どちらも liff.isApiAvailable で使える環境のときだけボタンを出す
+// ============================================
+
+const MINI_APP_URL = `https://miniapp.line.me/${LIFF_ID}`;
+
+function isLiffApiAvailable(name) {
+  try { return liffAvailable && liff.isInClient() && liff.isApiAvailable(name); } catch (e) { return false; }
+}
+
+function setupMiniAppActions() {
+  const wrap = document.getElementById('miniActions');
+  const shareBtn = document.getElementById('shareBtn');
+  const shortcutBtn = document.getElementById('shortcutBtn');
+  let any = false;
+
+  if (isLiffApiAvailable('shareTargetPicker')) {
+    shareBtn.hidden = false;
+    any = true;
+    shareBtn.addEventListener('click', shareCurrentVideo);
+  }
+
+  if (isLiffApiAvailable('createShortcutOnHomeScreen')) {
+    shortcutBtn.hidden = false;
+    any = true;
+    shortcutBtn.addEventListener('click', async () => {
+      try {
+        await liff.createShortcutOnHomeScreen({ url: MINI_APP_URL });
+      } catch (e) {
+        console.warn('shortcut:', e);
+      }
+    });
+  }
+
+  wrap.hidden = !any;
+}
+
+async function shareCurrentVideo() {
+  const video = filteredVideos[currentSlideIndex];
+  const title = video ? `「${video.title}」` : '';
+  const text = `秋田ノーザンハピネッツ ムービーギャラリーで${title}を観よう！\n${MINI_APP_URL}`;
+  try {
+    await liff.shareTargetPicker([{ type: 'text', text }], { isMultiple: true });
+  } catch (e) {
+    // コンソール側でシェアターゲットピッカーが無効な場合など。ボタンを隠して以後出さない
+    console.warn('share:', e);
+    document.getElementById('shareBtn').hidden = true;
+    const shortcutHidden = document.getElementById('shortcutBtn').hidden;
+    if (shortcutHidden) document.getElementById('miniActions').hidden = true;
+  }
 }
 
 // フッターのプラポリ・利用規約リンク（外部リダイレクトを避け、LINE内ブラウザ/別タブで開く）
