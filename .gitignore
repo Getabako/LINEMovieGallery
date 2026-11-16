@@ -65,7 +65,7 @@ node_modules/
 # dotenv environment variables file
 .env
 
-# Video files (hosted on Firebase Storage)
+# Video files (hosted on Vercel Blob)
 movies/
 
 # Upload script
@@ -86,3 +86,4 @@ LINE入力情報.md
 # Vercel
 .vercel
 .env*.local
+.env*
