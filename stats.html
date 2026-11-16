@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>視聴数レポート | MOVIE GALLERY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #e40274;
+      --ink: #1c1c1e;
+      --sub: #5f6368;
+      --line: #e3e5e8;
+      --bg: #f6f7f9;
+      --card: #ffffff;
+    }
+    html { font-size: 17px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Noto Sans JP', sans-serif;
+      line-height: 1.9;
+      letter-spacing: 0.05em;
+    }
+    .wrap { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    h1 { font-size: 1.7rem; font-weight: 900; margin: 0 0 0.4rem; line-height: 1.5; }
+    h2 { font-size: 1.25rem; font-weight: 700; margin: 3rem 0 1rem; padding-left: 0.8rem; border-left: 0.3rem solid var(--primary); line-height: 1.6; }
+    .lead { color: var(--sub); margin: 0 0 2rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 0.9rem; padding: 1.2rem 1.3rem; }
+    .card .label { color: var(--sub); font-size: 0.95rem; }
+    .card .num { font-size: 2.3rem; font-weight: 900; line-height: 1.4; letter-spacing: 0.02em; }
+    .card .note { color: var(--sub); font-size: 0.9rem; }
+    .table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: 0.9rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 30rem; }
+    th, td { padding: 0.9rem 1rem; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { font-size: 0.92rem; color: var(--sub); font-weight: 500; background: #fafbfc; }
+    th:first-child, td:first-child { text-align: left; }
+    tr:last-child td { border-bottom: none; }
+    td.title { font-weight: 700; white-space: normal; }
+    td.title small { display: block; color: var(--sub); font-weight: 400; font-size: 0.9rem; }
+    .bar { height: 0.5rem; border-radius: 1rem; background: var(--primary); margin-top: 0.3rem; min-width: 2px; }
+    .notes { color: var(--sub); font-size: 0.95rem; padding-left: 1.3rem; }
+    .notes li { margin-bottom: 0.4rem; }
+    .msg { background: var(--card); border: 1px solid var(--line); border-radius: 0.9rem; padding: 1.5rem; }
+    .key-form { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 1rem; }
+    input, button, select {
+      font: inherit; letter-spacing: inherit; padding: 0.75rem 1rem; border-radius: 0.6rem; border: 1px solid var(--line);
+    }
+    input { flex: 1; min-width: 14rem; }
+    button { background: var(--primary); color: #fff; border: none; font-weight: 700; cursor: pointer; padding: 0.75rem 1.6rem; }
+    .toolbar { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; color: var(--sub); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>視聴数レポート</h1>
+    <p class="lead" id="lead">秋田ノーザンハピネッツ MOVIE GALLERY</p>
+
+    <div class="msg" id="keyBox" hidden>
+      <div id="keyMsg">閲覧キーを入力してください。</div>
+      <form class="key-form" id="keyForm">
+        <input type="password" id="keyInput" placeholder="閲覧キー" autocomplete="off">
+        <button type="submit">表示する</button>
+      </form>
+    </div>
+
+    <div id="report" hidden>
+      <div class="cards" id="cards"></div>
+
+      <h2>動画ごとの再生数（累計）</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>動画</th><th>再生数</th><th>見た人数</th><th>最後まで視聴</th><th>完走率</th></tr></thead>
+          <tbody id="videoRows"></tbody>
+        </table>
+      </div>
+
+      <h2>日ごとの推移</h2>
+      <div class="toolbar">
+        <label for="daysSel">表示期間</label>
+        <select id="daysSel">
+          <option value="7">直近7日</option>
+          <option value="30" selected>直近30日</option>
+          <option value="90">直近90日</option>
+          <option value="365">直近1年</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="dailyHead"></thead>
+          <tbody id="dailyRows"></tbody>
+        </table>
+      </div>
+
+      <h2>数字の見かた</h2>
+      <ul class="notes">
+        <li>再生数: 動画が3秒以上再生された回数です。アプリを開いた直後に自動で流れる1本目も、3秒以上流れれば1回と数えます。</li>
+        <li>見た人数: 同じ端末からの再生は何回でも1人と数えます。端末を替えた場合やLINEのデータを消した場合は別の人として数えます。</li>
+        <li>最後まで視聴: 動画の終わりまで再生された回数です。</li>
+        <li>アプリを開いた回数: ミニアプリが表示された回数です。</li>
+        <li>計測を始めた日より前の数字は含まれません。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="js/videos.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    let key = params.get('key') || '';
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => Number(n || 0).toLocaleString('ja-JP');
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function videoMeta(k) {
+      const v = ALL_VIDEOS.find((x) => x.key === k);
+      if (!v) return { title: k, player: '' };
+      const cat = CATEGORIES.find((c) => c.key === v.category);
+      return { title: v.title, player: cat ? cat.label : '' };
+    }
+
+    function showKeyBox(msg) {
+      $('report').hidden = true;
+      $('keyBox').hidden = false;
+      $('keyMsg').textContent = msg;
+    }
+
+    async function load() {
+      if (!key) return showKeyBox('閲覧キーを入力してください。');
+      const days = $('daysSel').value;
+      let data;
+      try {
+        const r = await fetch(`${STATS_API}/api/stats?key=${encodeURIComponent(key)}&days=${days}`);
+        if (r.status === 401) return showKeyBox('閲覧キーが違います。もう一度入力してください。');
+        if (!r.ok) throw new Error(r.status);
+        data = await r.json();
+      } catch (e) {
+        return showKeyBox('集計の取得に失敗しました。時間をおいて開き直してください。');
+      }
+      render(data);
+    }
+
+    function render(d) {
+      $('keyBox').hidden = true;
+      $('report').hidden = false;
+      const s = d.summary || {};
+      if (s.first_at) {
+        const f = new Date(s.first_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' });
+        $('lead').textContent = `秋田ノーザンハピネッツ MOVIE GALLERY ／ 計測開始 ${f} からの累計`;
+      }
+      const cards = [
+        ['動画の再生数', s.plays, `${fmt(s.play_users)}人が視聴`],
+        ['最後まで視聴', s.completes, s.plays ? `完走率 ${Math.round((s.completes / s.plays) * 100)}%` : ''],
+        ['アプリを開いた回数', s.opens, `${fmt(s.open_users)}人`],
+      ];
+      if ((s.friend_users || 0) + (s.non_friend_users || 0) > 0) {
+        cards.push(['公式アカウントと友だち', s.friend_users, `未登録 ${fmt(s.non_friend_users)}人`]);
+      }
+      $('cards').innerHTML = cards.map(([label, num, note]) =>
+        `<div class="card"><div class="label">${esc(label)}</div><div class="num">${fmt(num)}</div><div class="note">${esc(note || '')}</div></div>`
+      ).join('');
+
+      // 動画ごと（データが無い動画も0で表示）
+      const byKey = Object.fromEntries((d.videos || []).map((v) => [v.video_key, v]));
+      const keys = [...new Set([...ALL_VIDEOS.map((v) => v.key), ...Object.keys(byKey)])];
+      const max = Math.max(1, ...keys.map((k) => (byKey[k] ? byKey[k].plays : 0)));
+      $('videoRows').innerHTML = keys.map((k) => {
+        const v = byKey[k] || { plays: 0, play_users: 0, completes: 0 };
+        const m = videoMeta(k);
+        const rate = v.plays ? `${Math.round((v.completes / v.plays) * 100)}%` : '-';
+        return `<tr>
+          <td class="title">${esc(m.title)}<small>${esc(m.player)}</small><div class="bar" style="width:${(v.plays / max) * 100}%"></div></td>
+          <td>${fmt(v.plays)}</td><td>${fmt(v.play_users)}</td><td>${fmt(v.completes)}</td><td>${rate}</td></tr>`;
+      }).join('');
+
+      // 日ごと
+      const dv = {};
+      (d.dailyVideos || []).forEach((r) => { (dv[r.day] = dv[r.day] || {})[r.video_key] = r.plays; });
+      $('dailyHead').innerHTML = `<tr><th>日付</th><th>開いた回数</th><th>開いた人数</th><th>再生数</th>${
+        keys.map((k) => `<th>${esc(videoMeta(k).title)}</th>`).join('')}<th>最後まで視聴</th></tr>`;
+      const rows = d.daily || [];
+      $('dailyRows').innerHTML = rows.length ? rows.map((r) =>
+        `<tr><td>${esc(r.day)}</td><td>${fmt(r.opens)}</td><td>${fmt(r.open_users)}</td><td>${fmt(r.plays)}</td>${
+          keys.map((k) => `<td>${fmt((dv[r.day] || {})[k])}</td>`).join('')}<td>${fmt(r.completes)}</td></tr>`
+      ).join('') : `<tr><td colspan="${keys.length + 5}" style="text-align:center;color:var(--sub)">この期間のデータはまだありません</td></tr>`;
+    }
+
+    $('keyForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      key = $('keyInput').value.trim();
+      load();
+    });
+    $('daysSel').addEventListener('change', load);
+    load();
+  </script>
+</body>
+</html>

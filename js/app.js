@@ -3,52 +3,7 @@
    LINE LIFF App - Main Application
    ============================================ */
 
-// --- カテゴリ定義 ---
-const CATEGORIES = [
-  { key: 'all',      label: 'すべて' },
-  { key: 'nakayama', label: '中山拓哉' },
-  { key: 'taguchi',  label: '田口成浩' },
-  { key: 'ako',      label: '赤穂雷太' },
-  { key: 'motoda',   label: '元田大陽' },
-  { key: 'wetzell',  label: 'ヤニー・ウェッツェル' },
-];
-
-// --- Cloud Storage ベースURL ---
-const GCS = 'https://storage.googleapis.com/gen-lang-client-0306469427.firebasestorage.app/movies';
-
-// --- 動画データ ---
-const ALL_VIDEOS = [
-  {
-    src: `${GCS}/01-nakayama.mp4`,
-    title: '秋田の心臓',
-    category: 'nakayama',
-    tags: ['中山拓哉', '選手', '紹介'],
-  },
-  {
-    src: `${GCS}/02-taguchi.mp4`,
-    title: '何度でも',
-    category: 'taguchi',
-    tags: ['田口成浩', '選手', '紹介'],
-  },
-  {
-    src: `${GCS}/03-ako.mp4`,
-    title: '双子の誓い',
-    category: 'ako',
-    tags: ['赤穂雷太', '選手', '紹介'],
-  },
-  {
-    src: `${GCS}/04-motoda.mp4`,
-    title: '秋田を照らす光',
-    category: 'motoda',
-    tags: ['元田大陽', '選手', '紹介'],
-  },
-  {
-    src: `${GCS}/05-wetzell.mp4`,
-    title: '世界が秋田へ',
-    category: 'wetzell',
-    tags: ['ヤニー・ウェッツェル', '選手', '紹介'],
-  },
-];
+// カテゴリ・動画データは js/videos.js（集計ページと共用）
 
 // --- LIFF設定 ---
 // LINEミニアプリ「秋田ノーザンハピネッツムービーギャラリー」
@@ -71,6 +26,69 @@ let liffAvailable = false;
 let userInteracted = false; // ユーザーが画面操作したか（ミュート解除用）
 
 // ============================================
+// 視聴計測
+// - open: アプリを開いた / play: 3秒以上再生 / complete: 最後まで再生
+// - 個人情報は送らない。端末ごとのランダムIDのみ（人数の重複除外用）
+// - 計測の失敗がアプリの動作に影響しないよう、すべて握りつぶす
+// ============================================
+
+const PLAY_THRESHOLD_SEC = 3;
+let viewState = { index: -1, played: false, completed: false };
+
+function getViewerId() {
+  try {
+    let id = localStorage.getItem('mg_viewer_id');
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem('mg_viewer_id', id);
+    }
+    return id;
+  } catch (e) { return null; }
+}
+
+function track(event, videoKey, extra) {
+  try {
+    let inLine = false;
+    try { inLine = liffAvailable && liff.isInClient(); } catch (e) {}
+    const body = JSON.stringify({ e: event, v: videoKey || null, u: getViewerId(), l: inLine, ...(extra || {}) });
+    // 文字列のsendBeaconは text/plain 扱いでプリフライトが発生しない
+    if (navigator.sendBeacon && navigator.sendBeacon(TRACK_URL, body)) return;
+    fetch(TRACK_URL, { method: 'POST', body, keepalive: true, mode: 'no-cors' }).catch(() => {});
+  } catch (e) {}
+}
+
+// アプリを開いた記録。公式アカウントと友だちかどうかも分かる範囲で添える
+// （チャネルに公式アカウントが紐づいていない場合は取得できないので null のまま送る）
+async function trackOpen() {
+  let friend = null;
+  try {
+    if (liffAvailable && liff.isLoggedIn()) {
+      const r = await Promise.race([
+        liff.getFriendship(),
+        new Promise((resolve) => setTimeout(() => resolve(null), 2000)),
+      ]);
+      if (r && typeof r.friendFlag === 'boolean') friend = r.friendFlag;
+    }
+  } catch (e) {}
+  track('open', null, { f: friend });
+}
+
+function onVideoProgress(index, video) {
+  if (index !== viewState.index || video.paused) return;
+  const item = filteredVideos[index];
+  if (!item) return;
+  if (!viewState.played && video.currentTime >= PLAY_THRESHOLD_SEC) {
+    viewState.played = true;
+    track('play', item.key);
+  }
+  // loop再生のため ended は発火しない。終端の手前に到達した時点で視聴完了とする
+  if (viewState.played && !viewState.completed && video.duration && video.currentTime >= video.duration - 1) {
+    viewState.completed = true;
+    track('complete', item.key);
+  }
+}
+
+// ============================================
 // 初期化
 // ============================================
 
@@ -78,6 +96,7 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
   await initLIFF();
+  trackOpen(); // 待たない（表示を遅らせない）
   buildFilterChips();
   setupSearch();
   applyFilter();
@@ -300,6 +319,12 @@ function buildSwiperSlides() {
 
   // タッチオーバーレイ設定
   document.querySelectorAll('.touch-overlay').forEach(setupTouchOverlay);
+
+  // 視聴計測
+  filteredVideos.forEach((_, i) => {
+    const v = document.getElementById(`video-${i}`);
+    if (v) v.addEventListener('timeupdate', () => onVideoProgress(i, v));
+  });
 }
 
 function setupTouchOverlay(overlay) {
@@ -372,6 +397,7 @@ function playVideo(index) {
   // ユーザー操作済みならミュート解除
   video.muted = !userInteracted;
   video.currentTime = 0;
+  viewState = { index, played: false, completed: false };
   video.play().catch(() => {
     // ブロックされたらミュートで再試行
     video.muted = true;

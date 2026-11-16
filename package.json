@@ -1,9 +1,13 @@
 {
   "name": "line-movie-gallery",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "private": true,
   "description": "秋田ノーザンハピネッツ MOVIE GALLERY - LINE LIFF App",
   "scripts": {
     "serve": "npx serve -l 3000",
     "dev": "npx serve -l 3000 --cors"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
   }
 }

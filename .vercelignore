@@ -1,0 +1,14 @@
+# 公開してはいけないもの・配信不要なものをデプロイから除外する
+# （CLI デプロイは .gitignore だけでは除外されなかったため明示する）
+LINE入力情報.md
+企画概要資料.md
+企画概要資料.pdf
+upload-*.js
+movies
+db
+SETUP.md
+firebase.json
+.firebaserc
+storage.rules
+.env*
+.DS_Store
